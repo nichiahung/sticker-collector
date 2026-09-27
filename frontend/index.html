@@ -4,16 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>貼紙紀錄 📔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f4f2ed;
+    --paper: #f5f0e6;
     --card: #fff;
     --line: #e2ddd1;
     --ink: #34322e;
     --muted: #7c776c;
     --accent: #4f7a73;
     --accent-soft: #e5eeec;
-    --danger: #a4493d;
+    --danger: #b3402e;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -411,7 +415,7 @@
 </head>
 <body>
 <main>
-<h1>貼紙紀錄 📔</h1>
+<h1>貼紙紀錄</h1>
 <p class="sub">記下收到的貼紙，累積分數後兌換獎品。</p>
 <div id="message" role="status" aria-live="polite"></div>
 
@@ -552,40 +556,134 @@
   // 只改本段 + 下方「大人頁 CSS/JS 區」，不要動共用 helper 或小孩頁。
   // ---- 大人頁專屬 CSS（class 一律 pv- 前綴；只讀共用 CSS 變數，不改它們）----
   const PARENT_CSS = `
+    /* 冰箱門佈告欄 tokens（docs/ref/fridge-decision.md §0）：父母頁只用這 7 色；
+       --accent-soft 映射回 --card = 停用；rarity 藍金底停用。 */
+    #parent-view {
+      --paper: #f5f0e6; --card: #fdfbf5; --ink: #2b2e33; --line: #ddd5c2;
+      --seal: #b3402e; --teal: #4f7a73; --muted: #7c776c; --accent-soft: var(--card);
+      --accent: var(--teal); --danger: var(--seal);
+    }
+    body:has(#parent-view:not([hidden])) { background: var(--paper); overflow-x: hidden; }
+    #parent-view .card { border-radius: 12px; box-shadow: none; }
+
     .pv-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-    .pv-tab { flex: 1; padding: 10px 6px; font-size: 17px; font-weight: 600; border-width: 2px; border-radius: 12px; }
-    .pv-tab.active { border-color: var(--accent); background: var(--accent-soft); }
+    .pv-tab { flex: 1; padding: 10px 6px; border-width: 1px; background: var(--card);
+              font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-size: 17px; font-weight: 700; }
+    #parent-view .pv-tab { border-radius: 12px; }
+    #parent-view .pv-tab.active { border-color: var(--teal); background: var(--card); }
     .pv-tab:disabled { opacity: .5; }
-    .pv-big { display: flex; gap: 10px; align-items: stretch; margin: 14px 0 12px; }
-    .pv-main { flex: 1; min-height: 96px; font-size: 28px; font-weight: 600; line-height: 1.3; border-radius: 18px;
-               box-shadow: 0 4px 12px rgba(79,122,115,.25); }
-    .pv-main .pv-main-sub { display: block; font-size: 17px; font-weight: 400; opacity: .95; }
+
+    /* D-fix 對比：--muted 在紙底僅 ~4.0，未達 4.5；父母頁作用域加深（token 名不變，小孩頁不動） */
+    #parent-view { --muted: #655f54; }
+
+    /* D1-D4 小孩拍立得卡 */
+    .pv-kids { display: flex; flex-wrap: wrap; gap: 14px 12px; margin: 2px 0 16px; }
+    .pv-kid { position: relative; width: 148px; padding: 7px 6px 9px; display: flex; flex-direction: column;
+              align-items: center; text-align: center; color: var(--ink); cursor: pointer;
+              background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+              transform: rotate(var(--pv-rot, 0deg)); }
+    .pv-kid .pv-magnet { line-height: 0; margin-top: -5px; }
+    .pv-kid-photo { width: 112px; height: 112px; margin-top: 3px; display: flex; align-items: center;
+                    justify-content: center; font-size: 40px; line-height: 1;
+                    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+    .pv-kid-initial { font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-size: 34px; color: var(--muted); }
+    .pv-kid-name { margin-top: 8px; overflow-wrap: anywhere; color: var(--ink);
+                   font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-weight: 700; font-size: 15px; }
+    .pv-kid-score { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .pv-magnet circle { fill: var(--line); }
+    .pv-kid.sel .pv-magnet circle { fill: var(--seal); }
+
+    /* D5-D7 集點打孔列 */
+    .pv-collect { margin: 0 0 14px; }
+    .pv-collect-title { margin-bottom: 6px; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .pv-punch { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .pv-punch-row { display: flex; align-items: center; gap: 8px; }
+    .pv-hole circle { fill: none; stroke: var(--line); stroke-width: 1.5; }
+    .pv-hole.on circle { fill: var(--seal); stroke: none; }
+    .pv-punch-more { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+    /* D8-D9 磁鐵壓條＋condition 小字 */
+    .pv-big { display: flex; gap: 10px; align-items: stretch; margin: 0 0 8px; }
+    .pv-main { position: relative; flex: 1; min-height: 72px; height: 72px; padding: 0 14px 0 26px;
+               display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+               color: var(--card); background: var(--teal); border: 1px solid var(--ink); border-radius: 8px;
+               font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-weight: 700; font-size: 24px;
+               line-height: 1.2; box-shadow: none; }
+    .pv-main .pv-main-sub { font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+                            font-size: 17px; font-weight: 400; color: var(--card); }
+    .pv-main .pv-magnet { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); line-height: 0; }
+    .pv-main .pv-magnet circle { fill: var(--card); }
+    .pv-main:active:not(:disabled) { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .pv-main:disabled { opacity: .5; }
     .pv-qty { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 13px; color: var(--muted); }
-    .pv-qty input { width: 76px; text-align: center; font-size: 22px; padding: 12px 6px; }
+    .pv-qty input { width: 76px; padding: 12px 6px; text-align: center; font-size: 22px; font-variant-numeric: tabular-nums; }
+    .pv-cond { margin: 0 0 10px; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.4;
+               font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-style: italic; }
+
+    /* chips（D10 去 emoji／condition；D11 觸控數不變） */
     .pv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pv-chip { padding: 12px 14px; min-height: 48px; border-radius: 22px; }
-    .pv-chip .meta { color: var(--muted); font-size: 13px; margin-left: 6px; }
-    .pv-cond { display: block; font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--muted); }
-    .pv-main .pv-cond { color: inherit; opacity: .85; }
-    .pv-shops { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .pv-shop { flex: 1; min-width: 110px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #f6f4ee; }
-    .pv-shop b { display: block; font-size: 14px; }
-    .pv-shop span { font-size: 13px; color: var(--muted); }
-    .pv-shop.open span { color: var(--accent); font-weight: 600; }
-    .pv-fold { margin-top: 10px; border-top: 1px solid #efece5; padding-top: 4px; }
+    .pv-chip { padding: 12px 14px; min-height: 48px; border-radius: 8px; background: var(--card); border: 1px solid var(--line); }
+    .pv-chip .meta { margin-left: 6px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+    /* D12-D15 佈告紙條（不承載點擊） */
+    .pv-shops { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .pv-slip { position: relative; flex: 1 1 140px; min-width: 132px; padding: 9px 12px 10px; text-align: left;
+               background: var(--card); border: 1px solid var(--line); border-radius: 4px;
+               transform: rotate(var(--pv-srot, 0deg)); }
+    .pv-slip-pin { display: flex; justify-content: center; margin-top: -3px; line-height: 0; }
+    .pv-slip-pin circle { fill: var(--muted); }
+    .pv-slip-title { display: block; color: var(--ink);
+                     font-family: "Noto Serif TC", "Songti TC", "SimSun", serif; font-weight: 700; font-size: 14px; }
+    .pv-slip-sub { display: block; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .pv-slip.open .pv-slip-sub { color: var(--teal); font-weight: 700; }
+
+    .pv-fold { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
     .pv-fold > summary { cursor: pointer; color: var(--muted); font-size: 15px; padding: 8px 0; }
     .pv-fold .pv-chips { margin: 8px 0; }
+
+    /* D16-D18 墨／硃雙色記帳列 */
+    .pv-ledger { overflow-x: auto; }
+    .pv-ledger table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    .pv-ledger th, .pv-ledger td { padding: 6px 4px; text-align: left; border-top: 1px solid var(--line); color: var(--ink); }
+    .pv-ledger th { color: var(--muted); font-weight: 500; font-size: 13px; }
+    .pv-ledger td.time { white-space: nowrap; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .pv-ledger td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pv-ledger td.pv-out { color: var(--seal); }
+
+    /* 目錄／表單：收斂 radius、去藍金 rarity */
+    #parent-view input { border-radius: 8px; background: var(--card); }
+    #parent-view select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font: inherit; color: var(--ink); }
+    #parent-view .list button, #parent-view .form button, #parent-view .quick button { background: var(--card); }
+    #parent-view button:disabled { color: var(--muted); background: var(--paper); }
+    #parent-view button.primary { background: var(--teal); border-color: var(--ink); color: var(--card); }
+    #parent-view button.primary:hover:not(:disabled) { background: var(--teal); }
+    #parent-view button.link:hover:not(:disabled) { background: none; }
+    #parent-view .list li { border-bottom: 1px solid var(--line); }
+    #parent-view .list button { padding: 6px 10px; }
+    #parent-view .list .pv-cond { margin: 0; }
     #parent-view .card h3 .meta { font-weight: 400; font-size: 13px; margin-left: 6px; }
-    .rarity { font-size: 11px; line-height: 18px; padding: 0 7px; border-radius: 9px; border: 1px solid var(--line); color: var(--muted); background: #f6f4ee; }
-    .rarity.rare { color: #3f6f9e; border-color: #b7d0ea; background: #eef5fc; }
-    .rarity.epic { color: #7a5200; border-color: #e3b84a; background: #fff3cf; font-weight: 700; }
+    #parent-view .rarity { padding: 0 7px; border: 1px solid var(--line); border-radius: 4px;
+                           color: var(--ink); background: var(--card); font-size: 11px; line-height: 18px; }
+    #parent-view .rarity.rare, #parent-view .rarity.epic { color: var(--ink); border-color: var(--line); background: var(--card); font-weight: 700; }
     .pv-edit input[type="number"] { width: 76px; }
     .pv-edit input.emoji { width: 56px; text-align: center; }
-    #parent-view select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; }
-    #parent-view .list button { padding: 6px 10px; }
-    /* 兩步確認armed狀態：轉紅提醒「再按一次才執行」 */
-    button.confirming { background: var(--danger); border-color: var(--danger); color: #fff; }
-    button.link.confirming { background: none; color: var(--danger); text-decoration: underline; }
+    /* 兩步確認armed狀態：轉紅提醒「再按一次才執行」（--seal） */
+    #parent-view button.confirming { background: var(--danger); border-color: var(--danger); color: var(--card); }
+    #parent-view button.link.confirming { background: none; color: var(--danger); text-decoration: underline; }
+
+    /* D19（480px）／D20（390px）斷點 */
+    @media (max-width: 480px) {
+      .pv-kids { display: grid; grid-template-columns: repeat(2, 148px); justify-content: start; }
+      .pv-slip { flex-basis: 46%; }
+      .pv-hole { width: 12px; height: 12px; }
+    }
+    @media (max-width: 390px) {
+      .pv-kid-photo { width: 64px; height: 64px; font-size: 30px; }
+      .pv-kid-initial { font-size: 26px; }
+      .pv-kid-name { font-size: 12px; }
+      .pv-slip { flex-basis: 100%; }
+      .pv-hole { width: 11px; height: 11px; }
+    }
   `;
   document.head.append(h("style", { id: "parent-css" }, PARENT_CSS));
 
@@ -614,16 +712,74 @@
   const pvRun = (btn, fn) => { if (btn) btn.disabled = true; act(fn); };
   const pvCount = input => Math.max(1, parseInt(input.value, 10) || 1);
 
+  // ---- 冰箱門佈告欄：磁鐵／圖釘／打孔一律 SVG circle（不用 emoji；見 D3/D6/D12）----
+  const PV_SVG_NS = "http://www.w3.org/2000/svg";
+  function pvSvgCircle(size, r, cls) {
+    const c = size / 2;
+    const svg = document.createElementNS(PV_SVG_NS, "svg");
+    svg.setAttribute("width", size); svg.setAttribute("height", size);
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    svg.setAttribute("aria-hidden", "true");
+    if (cls) svg.setAttribute("class", cls);
+    const dot = document.createElementNS(PV_SVG_NS, "circle");
+    dot.setAttribute("cx", c); dot.setAttribute("cy", c); dot.setAttribute("r", r);
+    svg.append(dot);
+    return svg;
+  }
+  const pvDot = (size, cls) => pvSvgCircle(size, size / 2, cls);          // 實心（磁鐵／已集／圖釘）
+  const pvRing = (size, sw) => pvSvgCircle(size, size / 2 - sw / 2, "pv-hole");  // 空心（未集）
+
+  // 依 key hash 寫死檔位：同 key 永遠同角度，不用 Math.random、re-render 不抖動
+  const pvHash = key => {
+    let h = 0;
+    for (const ch of key) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+  };
+  const PV_KID_ROT = [-1.2, 0, 1.2];      // D2 小孩卡三檔
+  const PV_SLIP_ROT = [-1, 0.6, 1];       // D13 紙條三檔（與小孩卡錯開）
+  const pvKidAngle = name => PV_KID_ROT[pvHash("kid:" + name) % 3];
+  const pvSlipAngle = id => PV_SLIP_ROT[pvHash("slip:" + id) % 3];
+
+  // D1-D4 小孩拍立得卡：頭像 emoji 只准出現在照片區中央 ≤40px；無頭像顯示名字首字
+  function pvKidCard(k) {
+    const name = k.display || k.name;
+    const photo = k.emoji ? k.emoji : h("span", { class: "pv-kid-initial" }, name.slice(0, 1));
+    return h("button", { class: "pv-kid" + (k.name === state.current ? " sel" : ""),
+      style: `--pv-rot:${pvKidAngle(k.name).toFixed(2)}deg`, title: `選 ${name}`,
+      onclick: () => pvPick(k.name) },
+      h("span", { class: "pv-magnet" }, pvDot(10)),
+      h("span", { class: "pv-kid-photo" }, photo),
+      h("span", { class: "pv-kid-name" }, name),
+      h("span", { class: "pv-kid-score" }, `${k.score} 分`));
+  }
+
+  // D5-D7 集點打孔列：已集 seal 實心／未集 line 空心；每排 6 格、最多 2 排，左對齊
+  function pvCollect() {
+    const counts = state.detail?.stickers || {};
+    const total = state.stickers.length;
+    const owned = state.stickers.filter(s => (counts[s.id] || 0) > 0).length;
+    const missing = total - owned;
+    const title = (owned === 0 && missing === 0) ? "還沒開始收集"
+      : `收集 ${owned}/${total} · 還差 ${missing} 種`;
+    const holes = state.stickers.slice(0, 12)
+      .map(s => (counts[s.id] || 0) > 0 ? pvDot(14, "pv-hole on") : pvRing(14, 1.5));
+    const rows = [];
+    for (let i = 0; i < holes.length; i += 6) rows.push(h("div", { class: "pv-punch-row" }, holes.slice(i, i + 6)));
+    if (total > 12 && rows.length) rows[rows.length - 1].append(h("span", { class: "pv-punch-more" }, `+${total - 12}`));
+    return h("div", { class: "pv-collect" }, h("div", { class: "pv-collect-title" }, title),
+      rows.length ? h("div", { class: "pv-punch" }, rows) : []);
+  }
+
   // 主按鈕預記的貼紙：上回用的 → 該小孩最近一筆 log → 目錄第一種
   function pvTarget() {
     const byId = id => state.stickers.find(s => s.id === id);
     return byId(state.lastSticker) || byId(state.detail?.log?.[0]?.sticker) || state.stickers[0] || null;
   }
 
+  // D10：chip 去 emoji、去 condition 小字（觸控數不變，仍各 1 下）
   const pvChip = s => h("button", { class: "pv-chip", title: `記 ${s.label} ×1`,
     onclick: e => pvRun(e.currentTarget, () => recordSticker({ sticker: s.id })) },
-    `${s.emoji} ${s.label}`, h("span", { class: "meta" }, `+${s.points}`),
-    s.condition ? h("small", { class: "pv-cond" }, `⏳ ${s.condition}`) : []);
+    s.label, h("span", { class: "meta" }, `+${s.points}`));
 
   const pvFold = (key, title, ...kids) => h("details", { class: "pv-fold", open: !!pv.open[key],
     ontoggle: e => { pv.open[key] = e.target.open; } }, h("summary", {}, title), kids);
@@ -637,12 +793,13 @@
       .sort((a, b) => (counts[b.s.id] || 0) - (counts[a.s.id] || 0) || a.i - b.i).map(x => x.s);
 
     const qty = h("input", { type: "number", min: "1", value: "1", inputmode: "numeric", "aria-label": "數量" });
-    const subText = () => `${target.emoji} ${target.label} ×${pvCount(qty)}`;
+    const subText = () => `${target.label} ×${pvCount(qty)}`;
     const sub = h("span", { class: "pv-main-sub" }, target ? subText() : "請先到「目錄」新增貼紙類型");
     if (target) qty.oninput = () => { sub.textContent = subText(); };
+    // D8 磁鐵壓條：左緣嵌 10px --card 實心圓；文字 serif 24px＋副行 17px；按壓用 outline（非陰影）
     const main = h("button", { class: "primary pv-main", disabled: !target,
       onclick: e => pvRun(e.currentTarget, () => recordSticker({ sticker: target.id, count: pvCount(qty) })) },
-      "＋記", sub, target?.condition ? h("small", { class: "pv-cond" }, `⏳ ${target.condition}`) : []);
+      h("span", { class: "pv-magnet", "aria-hidden": "true" }, pvDot(10)), "＋記", sub);
 
     // 第二層：其餘貼紙 + 即興輸入（label + points + count）
     const iLabel = h("input", { type: "text", placeholder: "貼紙名稱", "aria-label": "貼紙名稱" });
@@ -656,10 +813,10 @@
     const rest = ranked.slice(PV_CHIPS);
 
     return h("div", { class: "card", id: "pv-record" },
-      h("div", { class: "tabs", role: "group", "aria-label": "選小孩" }, state.kids.map(k =>
-        h("button", { class: "tab" + (k.name === state.current ? " active" : ""), onclick: () => pvPick(k.name) },
-          kidLabel(k), h("span", { class: "pts" }, `${k.score} 分`)))),
+      h("div", { class: "pv-kids", role: "group", "aria-label": "選小孩" }, state.kids.map(pvKidCard)),
+      pvCollect(),
       h("div", { class: "pv-big" }, main, h("label", { class: "pv-qty" }, "數量", qty)),
+      target?.condition ? h("div", { class: "pv-cond" }, `條件：${target.condition}`) : [],
       ranked.length ? h("div", { class: "pv-chips" }, ranked.slice(0, PV_CHIPS).map(pvChip)) : [],
       pvFold("adhoc", "換別種／即興貼紙",
         rest.length ? h("div", { class: "pv-chips" }, rest.map(pvChip)) : [],
@@ -703,12 +860,16 @@
     : `開店日 ${pvMD(r.next_shop)}（剩 ${pvDaysUntil(r.next_shop)} 天）`;
   // 已有開店日但今天不在窗內；無 anchor 的首兌不算關店（後端放行並定下開店日）
   const pvShopClosed = r => r.shop_open === false && !!r.next_shop;
+  // D12-D15 佈告紙條：card 底、1px line 邊、radius 4、圖釘點半壓邊、依 id hash 微旋轉；不承載點擊
   function pvShopCards() {
     const rewards = [...state.rewards].sort((a, b) => a.cost - b.cost);
     if (!rewards.length) return [];
     return h("div", { class: "pv-shops", id: "pv-shops" }, rewards.map(r =>
-      h("div", { class: "pv-shop" + (r.shop_open ? " open" : "") }, h("b", {}, r.label),
-        h("span", {}, pvShopText(r)))));
+      h("div", { class: "pv-slip" + (r.shop_open ? " open" : ""),
+        style: `--pv-srot:${pvSlipAngle(r.id).toFixed(2)}deg` },
+        h("span", { class: "pv-slip-pin", "aria-hidden": "true" }, pvDot(6)),
+        h("b", { class: "pv-slip-title" }, r.label),
+        h("span", { class: "pv-slip-sub" }, pvShopText(r)))));
   }
 
   // ---- 兌換（大人操作；小孩頁只讀）----
@@ -751,8 +912,8 @@
 
   const PV_RARITIES = ["common", "rare", "epic"];  // 預設 common（第一項）
   const pvStickerFields = {
-    view: s => ({ title: `${s.emoji} ${s.label}`, meta: `${s.points} 分`,
-                  sub: s.condition ? `⏳ ${s.condition}` : null,
+    view: s => ({ title: s.label, meta: `${s.points} 分`,
+                  sub: s.condition ? `條件：${s.condition}` : null,
                   badge: s.rarity ? h("span", { class: "rarity " + s.rarity }, s.rarity) : null }),
     edit: s => {
       const emoji = h("input", { type: "text", class: "emoji", value: s.emoji });
@@ -842,23 +1003,19 @@
       h("div", { class: "form" }, name, display, emoji, h("button", { onclick: add }, "新增小孩")));
   }
 
-  // ---- 明細（既有 table()）----
-  const pvExport = path => h("a", { href: API + path, download: "" }).click();  // 後端回 attachment，頁面不跳走
+  // ---- 明細（D16-D18 墨／硃雙色記帳列；沿用既有 table()，只換 class／外框）----
   function pvLogSection(kid) {
     const d = state.detail || {};
+    const name = kid.display || kid.name;
     return h("div", {},
-      h("div", { class: "form" },
-        h("button", { onclick: () => pvExport("/export.xlsx") }, "匯出 Excel（全部）"),
-        h("button", { onclick: () => pvExport("/" + encodeURIComponent(kid.name) + "/export.xlsx") },
-          `匯出 Excel（${kid.display || kid.name}）`)),
-      h("h3", {}, `${kidLabel(kid)} 收受`),
-      table(["時間", "貼紙", "分"], d.log, e => [
+      h("h3", {}, `${name} 收受`),
+      h("div", { class: "pv-ledger" }, table(["時間", "貼紙", "分"], d.log, e => [
         h("td", { class: "time" }, fmtTime(e.ts)), h("td", {}, `${e.label} ×${e.count}`),
-        h("td", { class: "num" }, `+${e.points}`)]),
-      h("h3", {}, `${kidLabel(kid)} 兌換`),
-      table(["時間", "獎品", "分"], d.reward_log, e => [
+        h("td", { class: "num" }, `+${e.points}`)])),
+      h("h3", {}, `${name} 兌換`),
+      h("div", { class: "pv-ledger" }, table(["時間", "獎品", "分"], d.reward_log, e => [
         h("td", { class: "time" }, fmtTime(e.ts)), h("td", {}, e.label),
-        h("td", { class: "num" }, `−${e.cost}`)]));
+        h("td", { class: "num pv-out" }, `−${e.cost}`)])));
   }
 
   // 分頁列：記／目錄／明細。還沒有小孩時只開放「目錄」（新增小孩在那裡）
