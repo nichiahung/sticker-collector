@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貼紙紀錄 📔</title>
+<style>
+  :root {
+    --bg: #f4f2ed;
+    --card: #fff;
+    --line: #e2ddd1;
+    --ink: #34322e;
+    --muted: #7c776c;
+    --accent: #4f7a73;
+    --accent-soft: #e5eeec;
+    --danger: #a4493d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    line-height: 1.5;
+  }
+  main { max-width: 640px; margin: 0 auto; }
+
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 16px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(52,50,46,.06);
+  }
+  .card h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .card h2 .meta { font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
+
+  /* 訊息 */
+  #message {
+    min-height: 28px;
+    margin-bottom: 8px;
+    color: var(--accent);
+    font-size: 15px;
+  }
+  #message.error { color: var(--danger); }
+  .offline { color: var(--danger); font-size: 16px; }
+
+  /* 通用元件 */
+  button, input {
+    font-family: inherit;
+    font-size: 16px;
+  }
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #faf8f4;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--accent-soft); }
+  button:disabled { color: #aaa; cursor: not-allowed; background: #f3f1ec; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover:not(:disabled) { background: #43695f; }
+  button.link { border: none; background: none; color: var(--danger); padding: 2px 6px; font-size: 14px; }
+  button.link:hover:not(:disabled) { background: none; text-decoration: underline; }
+
+  input {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    min-width: 0;
+  }
+  .form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .form input[type="text"] { flex: 1; min-width: 100px; }
+  .form input[type="number"] { width: 84px; }
+  .form input.emoji { width: 64px; flex: none; text-align: center; }
+
+  /* 小朋友 tab */
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab { text-align: left; padding: 8px 14px; }
+  .tab .pts { display: block; font-size: 14px; color: var(--muted); }
+  .tab.active { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* 貼紙牆 */
+  .card h2.wall-title { font-size: 26px; margin-bottom: 14px; }
+
+  /* 進度格：格子數 = 最近獎品所需分數 */
+  .goal { margin-bottom: 16px; }
+  .goal .goal-text { font-size: 15px; margin-bottom: 6px; }
+  .goal .goal-text .meta { font-size: 13px; color: var(--muted); margin-left: 6px; }
+  .goal .cells { display: grid; gap: 3px; }
+  .goal .cell { height: 14px; border: 1px solid var(--line); border-radius: 3px; }
+  .goal .cell.on { background: var(--accent); border-color: var(--accent); }
+
+  .wall {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+    gap: 10px;
+  }
+  .wall .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 6px 8px;
+    background: var(--tile, #faf8f4);
+    border: 1px solid var(--line);
+    border-color: color-mix(in srgb, var(--tile, #faf8f4) 75%, #8a8578);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .wall .tile .stack { display: flex; justify-content: center; white-space: nowrap; line-height: 1.2; }
+  .wall .tile .stack span { font-size: 24px; margin-left: -10px; }
+  .wall .tile .stack span:first-child { margin-left: 0; }
+  .wall .tile .stack .more { font-size: 16px; margin-left: 2px; align-self: flex-end; color: var(--muted); }
+  .wall .tile .label { font-size: 12px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+  .wall .tile .badge {
+    position: absolute; top: 4px; right: 4px;
+    padding: 0 6px; border-radius: 6px;
+    background: var(--accent); color: #fff;
+    font-size: 10px; line-height: 16px; font-weight: 600;
+  }
+  /* 未累積：灰階剪影，作為收集目標 */
+  .wall .tile.empty-slot { background: #eeece7; border: 1px dashed #cfcabd; }
+  .wall .tile.empty-slot .stack span { font-size: 34px; margin-left: 0; filter: grayscale(1) brightness(0.55); opacity: 0.35; }
+  .wall .tile.empty-slot .label { font-size: 14px; color: #a9a496; }
+
+  /* 目錄列表 */
+  .list { list-style: none; }
+  .list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #efece5;
+  }
+  .list li:last-child { border-bottom: none; }
+  .list .grow { flex: 1; }
+  .list .meta { color: var(--muted); font-size: 14px; }
+
+  /* 快速按鈕 */
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick button { padding: 10px 14px; }
+  .quick .meta { color: var(--muted); font-size: 14px; margin-left: 4px; }
+
+  .hint { color: var(--muted); font-size: 14px; margin-top: 10px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+
+  /* 明細 */
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 5px 4px; border-bottom: 1px solid #efece5; }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td.time { color: var(--muted); white-space: nowrap; font-size: 14px; }
+
+  /* view switch（舊共用切換列，已改為雙入口；保留樣式以防殘留引用） */
+  .view-switch { display: flex; gap: 8px; margin-bottom: 16px; }
+  .view-switch button {
+    flex: 1; padding: 12px; font-size: 18px; font-weight: 600;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--card); cursor: pointer;
+  }
+  .view-switch button.active { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* 雙入口（SPEC §7.1）：各自的小連結/出口，定位在 header 區 */
+  #parent-kid-link { display: inline-block; margin: 4px 0 12px; }
+  #kid-exit {
+    position: fixed; top: 12px; right: 14px; z-index: 20;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; text-decoration: none;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%; backdrop-filter: blur(4px);
+  }
+
+  /* 小孩入口＝全屏繪本：隱藏共用 header（標題/副標/訊息/大人口徑連結） */
+  body.kid-full main > h1, body.kid-full main > .sub, body.kid-full #message,
+  body.kid-full #parent-kid-link { display: none; }
+  #kid-view, #parent-view { display: block; }
+  #kid-view[hidden], #parent-view[hidden] { display: none; }
+
+  /* ===== 小孩頁專屬（一律以 #kid-view 為前綴，不影響大人頁）=====
+     視覺語言：星空夜藍 + 彩色大圓章貼紙（docs/ref/visual-decision.md）。
+     認圖不認字：圖大字少；全部靜態，無動畫。 */
+  /* 繪本式一次一屏（SPEC §7.6）：小孩頁時 body 鎖成一個 viewport 高，#kid-view 撐滿剩餘高度，不直捲 */
+  body:has(#kid-view:not([hidden])) {
+    height: 100vh; height: 100dvh; min-height: 0; overflow: hidden;
+    padding: 0;  /* 全屏繪本：不留 beige 邊，星空面板頂到螢幕邊 */
+    display: flex; flex-direction: column;
+  }
+  body:has(#kid-view:not([hidden])) h1,
+  body:has(#kid-view:not([hidden])) .sub { display: none; }
+  body:has(#kid-view:not([hidden])) main {
+    flex: 1; min-height: 0; width: 100%; max-width: none;
+    display: flex; flex-direction: column;
+  }
+  /* 尺寸收小（使用者反饋：貼紙冊偏大）：星空面板（#kid-view）維持滿版全寬，
+     只把繪本內容 #kid-view-content 收成 ~520px 置中 → 畫面上左右各留 ~70px 星空，
+     像拿在手的小冊子而非滿屏大卡片。#kid-exit 是 viewport fixed，不受影響。
+     封面/大圖章/新貼紙的尺寸另按比例收小（見各元件）。 */
+  #kid-view {
+    position: relative; overflow: hidden; color: #fff;
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    touch-action: pan-y; user-select: none; -webkit-user-select: none;
+    padding: 20px 16px 18px;
+    /* 圓體字優先（system font，不加 webfont）：iOS SF Pro Rounded、Windows 幼圓、macOS 苹方，
+       全落到中文圓體/手寫感；大人頁維持標準 JhengHei 簿記感，兩頁字距有意識的分開 */
+    font-family: "SF Pro Rounded", "Yuanti TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    background-color: #0d1547;
+    background-image:
+      radial-gradient(1.6px 1.6px at 22px 34px, #fff, transparent),
+      radial-gradient(1px 1px at 96px 84px, #fff, transparent),
+      radial-gradient(2px 2px at 170px 22px, #ffe9a8, transparent),
+      radial-gradient(1.2px 1.2px at 130px 150px, #cfe0ff, transparent),
+      radial-gradient(1.6px 1.6px at 44px 176px, #ffe9a8, transparent),
+      radial-gradient(1px 1px at 200px 110px, #fff, transparent),
+      linear-gradient(180deg, #0a1140 0%, #182a7a 55%, #43308a 100%);
+    background-size: 220px 200px, 220px 200px, 220px 200px, 220px 200px, 220px 200px, 220px 200px, 100% 100%;
+  }
+  #kid-view[hidden] { display: none; }
+
+  /* 封面：大頭像 + 超大分數（星星圖示取代「分」字） */
+  #kid-view .kid-cover { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  /* 頭像後方的柔光池：讓金框光暈漸層溶進星空，不是硬邊 */
+  #kid-view .kid-cover::before {
+    content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 204px; height: 204px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(255,215,106,.28) 0%, rgba(255,215,106,.10) 42%, transparent 70%);
+  }
+  #kid-view .kid-cover .avatar {
+    position: relative;
+    width: 118px; height: 118px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 70px; line-height: 1;
+    background: rgba(255,255,255,.14); border: 5px solid #ffd76a;
+    box-shadow: 0 0 0 4px rgba(255,215,106,.25), 0 0 32px rgba(255,215,106,.5);
+  }
+  /* 全集：avatar 外圈升級成金屬燙印環（同貼紙 foil 的金屬漸層）＋ ✦ 角標 */
+  #kid-view .kid-cover.complete .avatar { border-color: #ffe9a0; }
+  #kid-view .kid-cover.complete .avatar::before {
+    content: ""; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none;
+    background: linear-gradient(135deg, #fff3b0 0%, #d99a1a 38%, #fff0a0 58%, #b8791a 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  }
+  #kid-view .kid-cover.complete .avatar::after {
+    content: "✦"; position: absolute; top: -18px; right: -12px; font-size: 34px; line-height: 1;
+    color: #ffd76a; text-shadow: 0 0 8px rgba(0,0,0,.55);
+  }
+  #kid-view .kid-cover .book-title { margin-top: 12px; font-size: 19px; font-weight: 600; color: #d9e2ff; overflow-wrap: anywhere; }
+  #kid-view .kid-cover .kid-score { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 6px; }
+  #kid-view .kid-cover .kid-score .num {
+    font-size: 84px; font-weight: 800; line-height: 1.05; color: #ffe27a;
+    text-shadow: 0 0 24px rgba(255,226,122,.6);
+  }
+  #kid-view .kid-cover .kid-score .star { font-size: 48px; line-height: 1; }
+
+  /* 大圖章：圓形、白邊、彩色光暈；缺的＝灰階剪影 + 大「?」 */
+  #kid-view .stamp {
+    position: relative; width: 140px; height: 140px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--tile, #dcd9f5); border: 5px solid #fff;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.22),
+                0 0 26px color-mix(in srgb, var(--tile, #dcd9f5) 75%, transparent),
+                0 8px 16px rgba(0,0,0,.35);
+  }
+  #kid-view .stamp .pic { font-size: 78px; line-height: 1; }
+  #kid-view .stamp .qty {
+    position: absolute; right: -6px; bottom: -4px; min-width: 46px; height: 46px; padding: 0 8px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 23px; background: #ff6b81; border: 3px solid #fff;
+    font-size: 22px; font-weight: 800; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.35);
+  }
+  #kid-view .stamp .tag {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    padding: 0 10px; border-radius: 12px; background: #ffd76a; color: #4a3600;
+    font-size: 13px; line-height: 24px; font-weight: 800; border: 2px solid #fff;
+  }
+  /* epic：金／紫雙色邊 + 左上星光角標（rare 維持現狀；認圖不認字，不放文字） */
+  #kid-view .stamp.epic, #kid-view .kid-new .stamp.epic { border-color: #ffd76a #b18cff #ffd76a #b18cff; }
+  #kid-view .stamp .epic-mark {
+    position: absolute; top: -8px; left: -6px; width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; z-index: 1;
+    background: linear-gradient(135deg, #b18cff, #ffd76a); border: 2px solid #fff;
+    font-size: 16px; line-height: 1; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.45);
+    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  }
+  #kid-view .stamp.locked {
+    background: rgba(255,255,255,.08); border: 4px dashed rgba(255,255,255,.4); box-shadow: none;
+  }
+  #kid-view .stamp.locked .pic { filter: grayscale(1) brightness(0.3); opacity: .5; }
+  #kid-view .stamp.locked .q {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 64px; font-weight: 800; color: rgba(255,255,255,.9); text-shadow: 0 2px 10px rgba(0,0,0,.5);
+  }
+
+  /* 新的一張：最新那張大圖章置中（靜態金框＋微旋轉，剛貼上來的），下方接目標進度 */
+  #kid-view .kid-new { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 22px; }
+  #kid-view .kid-new .stamp { width: 160px; height: 160px; margin: 0; border-color: #ffd76a; transform: rotate(var(--rot, 0deg)); }
+  #kid-view .kid-new .stamp .pic { font-size: 92px; }
+  #kid-view .kid-new .stamp .qty { min-width: 48px; height: 48px; border-radius: 24px; font-size: 24px; }
+  #kid-view .kid-new .stamp .tag { font-size: 14px; line-height: 24px; padding: 0 12px; border-radius: 12px; }
+  #kid-view .kid-new .new-title { font-size: 26px; font-weight: 800; color: #ffe27a; }
+
+  /* 目標：Token Board 圓格，獎品在上、格子逐格點亮 */
+  #kid-view .kid-goal { padding: 20px 18px; border-radius: 24px; background: rgba(255,255,255,.09); border: 2px solid rgba(255,255,255,.18); }
+  #kid-view .kid-goal .goal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  #kid-view .kid-goal .gift { font-size: 44px; line-height: 1; }
+  #kid-view .kid-goal .goal-name { flex: 1; font-size: 24px; font-weight: 700; overflow-wrap: anywhere; }
+  #kid-view .kid-goal .goal-num { font-size: 22px; font-weight: 800; color: #ffe27a; white-space: nowrap; }
+  #kid-view .kid-goal .cells { display: grid; gap: 6px; }
+  #kid-view .kid-goal .cell {
+    aspect-ratio: 1; height: auto; border-radius: 50%;
+    background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.3);
+  }
+  #kid-view .kid-goal .cell.on { background: #ffd76a; border-color: #fff3c4; box-shadow: 0 0 10px rgba(255,215,106,.7); }
+
+  /* 貼紙冊：每頁 4×3 = 12 槽，一次只看一頁（大 ‹ › 或滑動切頁）。
+     槽位是輕微虛線框；貼上去的貼紙依 id 固定微旋轉（靜態，無 keyframes）+ 軟陰影 = 手貼感 */
+  #kid-view .kid-page {
+    position: relative; padding: 34px 14px 14px; border-radius: 24px;
+    background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.15);
+    box-shadow: inset 0 0 30px rgba(0,0,0,.18);
+  }
+  /* 頁頂裝訂孔 */
+  #kid-view .kid-page::before {
+    content: ""; position: absolute; top: 9px; left: 14px; right: 14px; height: 12px;
+    background: radial-gradient(circle 4.5px at 50% 50%, rgba(255,255,255,.4) 96%, transparent) repeat-x center / 40px 12px;
+  }
+  #kid-view .page-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #kid-view .slot {
+    container-type: inline-size; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 22px; border: 2px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.03);
+  }
+  /* 缺的：虛線空格；前幾格放灰階剪影 + ? 當「下一張是誰」的鉤子，其餘空格放淡「+」＝還有空間 */
+  #kid-view .slot.empty { position: relative; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.06); }
+  #kid-view .slot .ghost { font-size: 46cqw; line-height: 1; filter: grayscale(1) brightness(0.3); opacity: .5; }
+  #kid-view .slot .plus { font-size: 42cqw; font-weight: 300; line-height: 1; color: rgba(255,255,255,.32); }
+  #kid-view .slot .q {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 40cqw; font-weight: 800; color: rgba(255,255,255,.85); text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  }
+  #kid-view .slot .stamp {
+    width: 86%; height: auto; aspect-ratio: 1; border-width: 4px;
+    transform: rotate(var(--rot, 0deg));
+    box-shadow: 0 0 0 2px rgba(255,255,255,.18),
+                0 0 14px color-mix(in srgb, var(--tile, #dcd9f5) 55%, transparent),
+                0 6px 12px rgba(0,0,0,.3);
+  }
+  #kid-view .slot .stamp .pic { font-size: 50cqw; }
+  /* 稀有：同一張 >= 5 → 金色燙印框（金屬環 + ✦） */
+  #kid-view .slot .stamp.foil { border-color: #ffe9a0; }
+  #kid-view .slot .stamp.foil::before {
+    content: ""; position: absolute; inset: -8px; border-radius: 50%; pointer-events: none;
+    background: linear-gradient(135deg, #fff3b0 0%, #d99a1a 38%, #fff0a0 58%, #b8791a 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  }
+  #kid-view .slot .stamp.foil::after {
+    content: "✦"; position: absolute; top: -10px; right: -6px; font-size: 20cqw; line-height: 1;
+    color: #ffd76a; text-shadow: 0 0 6px rgba(0,0,0,.5);
+  }
+  #kid-view .page-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 4px; font-size: 16px; color: #b9c6f5; }
+  #kid-view .page-foot .pg { font-size: 20px; font-weight: 800; color: #d9e2ff; }
+  #kid-view .page-foot .fill.full { color: #ffe27a; font-weight: 800; }
+  /* 全集（擁有目錄每一種）：頁尾金色燙印小標 ＋ 頁框泛金；封面頭像環見 .kid-cover.complete */
+  #kid-view .page-foot .crest {
+    padding: 2px 12px; border-radius: 14px; font-size: 16px; font-weight: 800; color: #5a3a00;
+    background: linear-gradient(135deg, #fff3b0 0%, #e0a52a 45%, #fff0a0 62%, #c48a24 100%);
+    box-shadow: 0 0 10px rgba(255,215,106,.55);
+  }
+  #kid-view .kid-page.complete { border-color: rgba(255,215,106,.6); }
+  /* 滿頁沒空槽時，缺口剪影排在頁面下方一小列（仍是灰階剪影 + ?） */
+  #kid-view .ghost-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
+  #kid-view .ghost-row .slot { width: 64px; border-radius: 18px; }
+  #kid-view .kid-empty { text-align: center; color: #b9c6f5; padding: 20px 0; }
+  /* 後端連不上（小孩視圖）：大圖大字「請大人開」，是小孩卡死路徑的最後安全網 */
+  #kid-view .kid-off { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+  #kid-view .kid-off .lock { font-size: 96px; line-height: 1; filter: drop-shadow(0 0 24px rgba(255,215,106,.5)); }
+  #kid-view .kid-off .lock-text { font-size: 30px; font-weight: 800; color: #ffe27a; }
+
+  /* 畫面切換：#kid-view-content 一次只放一個 .kid-screen + 底部導覽列 */
+  #kid-view-content { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; }
+  #kid-view .kid-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+  #kid-view .kid-screen > * { margin-top: auto; margin-bottom: auto; }  /* 垂直置中；過矮時可捲回頂端 */
+  #kid-view .kid-screen.fade { animation: kidFade .18s ease-out; }
+  @keyframes kidFade { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { #kid-view .kid-screen.fade { animation: none; } }
+  #kid-view .kid-nav { flex: none; display: flex; justify-content: space-between; align-items: center; padding-top: 14px; }
+  #kid-view .kid-arrow {
+    width: 84px; height: 84px; padding: 0 0 8px; border-radius: 50%; cursor: pointer;
+    font-size: 60px; line-height: 1; font-weight: 700; color: #fff;
+    background: rgba(255,255,255,.16); border: 3px solid rgba(255,255,255,.55);
+  }
+  #kid-view .kid-arrow:active { background: rgba(255,255,255,.3); }
+  #kid-view .kid-arrow.off { visibility: hidden; }
+  #kid-view .kid-start {
+    width: 100%; padding: 20px 16px; border-radius: 40px; cursor: pointer;
+    font-size: 34px; font-weight: 800; color: #4a3600;
+    background: #ffd76a; border: 4px solid #fff3c4; box-shadow: 0 0 26px rgba(255,215,106,.55);
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>貼紙紀錄 📔</h1>
+<p class="sub">記下收到的貼紙，累積分數後兌換獎品。</p>
+<div id="message" role="status" aria-live="polite"></div>
+
+<!-- 大人視圖的小連結（僅在 parent 視圖顯示）-->
+<a id="parent-kid-link" href="?view=kid" style="display:none;font-size:13px;color:var(--muted);text-decoration:none">開啟小孩視圖 →</a>
+
+<!-- 小孩視圖的出口（僅在 kid 視圖顯示，導向預設大人入口）-->
+<a id="kid-exit" href="/" style="display:none" title="請大人開">🔒</a>
+
+<!-- 大人頁（大人頁 agent 填） -->
+<section id="parent-view">
+  <div id="parent-view-content">
+    <p class="empty">大人頁（尚未實作）</p>
+  </div>
+</section>
+
+<!-- 小孩頁（小孩頁 agent 填） -->
+<section id="kid-view" hidden>
+  <div id="kid-view-content">
+    <p class="empty">小孩頁（尚未實作）</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // API base：同目錄直接由 API 靜態服務 (GET /)，也可用 ?api=http://host:8000 指定
+  const API = new URLSearchParams(location.search).get("api") || "";
+
+  // state + view
+  const state = { kids: [], stickers: [], rewards: [], current: null, detail: null,
+                  view: new URLSearchParams(location.search).get("view") === "kid" ? "kid" : "parent",
+                  lastSticker: null };  // 大人頁「上回用的貼紙類型」，預設 1 下記
+  const $ = id => document.getElementById(id);
+
+  // 建 DOM：文字一律走 text node，避免使用者輸入的名稱被當成 HTML
+  function h(tag, props = {}, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") e.className = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) e.append(c instanceof Node ? c : document.createTextNode(c));
+    return e;
+  }
+
+  async function api(path, method = "GET", body) {
+    const opts = { method };
+    if (body !== undefined) {
+      opts.headers = { "Content-Type": "application/json" };
+      opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(API + path, opts);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.status);
+    return data;
+  }
+
+  let msgTimer = null;
+  function say(text, isError = false) {
+    const msg = $("message");
+    msg.textContent = text;
+    msg.className = isError ? "error" : "";
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => { msg.textContent = ""; }, 4000);
+  }
+
+  // 動作包裝：執行 → 顯示結果 → 重新載入
+  async function act(fn) {
+    try { say(await fn()); }
+    catch (e) { say("未完成：" + e.message, true); }
+    // re-render 前把可能還掛在舊 DOM 上的兩步確認歸零，避免 reset 打到已移除的節點
+    if (confirmArm) { clearTimeout(confirmArm.timer); confirmArm = null; }
+    await refresh();
+  }
+
+  async function refresh() {
+    try {
+      const [c, s, r] = await Promise.all([api("/children"), api("/stickers"), api("/rewards")]);
+      state.kids = c.children;
+      state.stickers = s.stickers;
+      state.rewards = r.rewards;
+      if (!state.kids.some(k => k.name === state.current)) state.current = state.kids[0]?.name ?? null;
+      state.detail = state.current ? await api("/" + encodeURIComponent(state.current)) : null;
+    } catch (e) {
+      // 兩入口各自給出口徑：大人頁＝中性訊息；小孩頁＝大圖大字的「請大人開」畫面（小孩卡死路徑的最後一道安全網）
+      const off = h("div", { class: "offline" }, "連不上後端 (sticker_api.py)，請先啟動 API");
+      if (state.view === "kid") {
+        $("kid-view-content").replaceChildren(
+          h("div", { class: "kid-off" },
+            h("div", { class: "lock" }, "🔒"),
+            h("div", { class: "lock-text" }, "請大人開")));
+        return;
+      }
+      $("parent-view-content").replaceChildren(off);
+      return;
+    }
+    render();
+  }
+
+  const me = () => state.kids.find(k => k.name === state.current);
+  const kidLabel = k => `${k.emoji || "🙂"} ${k.display || k.name}`;
+  const fmtTime = ts => (ts || "").slice(5, 16).replace("T", " ");  // MM-DD HH:mm
+
+  // ---- view 入口（共用）：只由 URL 決定，頁面內無「大人/小孩」切換列 ----
+  // parent 視圖顯示小連結「開啟小孩視圖」；kid 視圖顯示出口「🔒 請大人開」。
+  function switchView(view) {
+    state.view = view;
+    $("parent-view").hidden = view !== "parent";
+    $("kid-view").hidden = view !== "kid";
+    // 兩入口各自的 UI 元素
+    $("parent-kid-link").style.display = view === "parent" ? "inline-block" : "none";
+    $("kid-exit").style.display = view === "kid" ? "flex" : "none";
+    // 小孩入口＝全屏繪本：隱藏共用 header（標題/副標/訊息），零大人 UI
+    document.body.classList.toggle("kid-full", view === "kid");
+    try {
+      const u = new URL(location.href);
+      if (view === "kid") u.searchParams.set("view", "kid");
+      else u.searchParams.delete("view");
+      history.replaceState(null, "", u.toString());
+    } catch (_) {}
+    render();
+  }
+
+  // 依 state.view 分派到兩個 view 的 render（各自實作在下方）
+  function render() {
+    if (state.view === "parent") renderParentView();
+    else renderKidView();
+  }
+
+  // ==================== 大人頁（pain：操作摩擦 ≤ 2 下記一貼） ====================
+  // SPEC §7.2。由「大人頁」agent 填入：
+  //   - 選中一個小孩（kid-tabs / picker）
+  //   - 超大主按鈕「＋記」：預記「上回用的貼紙類型 ×1」（state.lastSticker）→ 1 下
+  //   - 常用貼紙 chip（各 1 下）
+  //   - 配置：貼紙目錄 CRUD、獎品目錄 CRUD（三價位 tier）、新增小孩、明細 log
+  // 只改本段 + 下方「大人頁 CSS/JS 區」，不要動共用 helper 或小孩頁。
+  // ---- 大人頁專屬 CSS（class 一律 pv- 前綴；只讀共用 CSS 變數，不改它們）----
+  const PARENT_CSS = `
+    .pv-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .pv-tab { flex: 1; padding: 10px 6px; font-size: 17px; font-weight: 600; border-width: 2px; border-radius: 12px; }
+    .pv-tab.active { border-color: var(--accent); background: var(--accent-soft); }
+    .pv-tab:disabled { opacity: .5; }
+    .pv-big { display: flex; gap: 10px; align-items: stretch; margin: 14px 0 12px; }
+    .pv-main { flex: 1; min-height: 96px; font-size: 28px; font-weight: 600; line-height: 1.3; border-radius: 18px;
+               box-shadow: 0 4px 12px rgba(79,122,115,.25); }
+    .pv-main .pv-main-sub { display: block; font-size: 17px; font-weight: 400; opacity: .95; }
+    .pv-qty { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 13px; color: var(--muted); }
+    .pv-qty input { width: 76px; text-align: center; font-size: 22px; padding: 12px 6px; }
+    .pv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pv-chip { padding: 12px 14px; min-height: 48px; border-radius: 22px; }
+    .pv-chip .meta { color: var(--muted); font-size: 13px; margin-left: 6px; }
+    .pv-cond { display: block; font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--muted); }
+    .pv-main .pv-cond { color: inherit; opacity: .85; }
+    .pv-shops { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pv-shop { flex: 1; min-width: 110px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #f6f4ee; }
+    .pv-shop b { display: block; font-size: 14px; }
+    .pv-shop span { font-size: 13px; color: var(--muted); }
+    .pv-shop.open span { color: var(--accent); font-weight: 600; }
+    .pv-fold { margin-top: 10px; border-top: 1px solid #efece5; padding-top: 4px; }
+    .pv-fold > summary { cursor: pointer; color: var(--muted); font-size: 15px; padding: 8px 0; }
+    .pv-fold .pv-chips { margin: 8px 0; }
+    #parent-view .card h3 .meta { font-weight: 400; font-size: 13px; margin-left: 6px; }
+    .rarity { font-size: 11px; line-height: 18px; padding: 0 7px; border-radius: 9px; border: 1px solid var(--line); color: var(--muted); background: #f6f4ee; }
+    .rarity.rare { color: #3f6f9e; border-color: #b7d0ea; background: #eef5fc; }
+    .rarity.epic { color: #7a5200; border-color: #e3b84a; background: #fff3cf; font-weight: 700; }
+    .pv-edit input[type="number"] { width: 76px; }
+    .pv-edit input.emoji { width: 56px; text-align: center; }
+    #parent-view select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; }
+    #parent-view .list button { padding: 6px 10px; }
+    /* 兩步確認armed狀態：轉紅提醒「再按一次才執行」 */
+    button.confirming { background: var(--danger); border-color: var(--danger); color: #fff; }
+    button.link.confirming { background: none; color: var(--danger); text-decoration: underline; }
+  `;
+  document.head.append(h("style", { id: "parent-css" }, PARENT_CSS));
+
+  // 獎品三價位（快達 / 幾週 / 長期）：不改後端資料模型，由 cost 推導價位分組；
+  // suggest = 引導新增時預填的分數。既有 small(10)=快達、big(30)=幾週，故不需動資料。
+  const PV_TIERS = [
+    { label: "快達", max: 10, suggest: 10 },
+    { label: "幾週", max: 30, suggest: 30 },
+    { label: "長期", max: Infinity, suggest: 60 },
+  ];
+  const pvTierOf = cost => PV_TIERS.find(t => cost <= t.max);
+  const pvTierRange = i => i === 0 ? `≤ ${PV_TIERS[0].max} 分`
+    : PV_TIERS[i].max === Infinity ? `> ${PV_TIERS[i - 1].max} 分`
+    : `${PV_TIERS[i - 1].max + 1}–${PV_TIERS[i].max} 分`;
+
+  const PV_CHIPS = 6;                    // 第一層最多放幾顆常用 chip，其餘收進第二層
+  // tab: 目前分頁（record 記｜catalog 目錄｜log 明細），預設「記」；editing: 正在改的目錄列 key；open: 折疊區展開狀態（re-render 後保留）
+  const pv = { tab: "record", editing: null, open: {} };
+  const PV_TABS = [["record", "記"], ["catalog", "目錄"], ["log", "明細"]];
+  const PV_KID_KEY = "sticker.parent.kid";  // 記住上回選的小孩（reload 後也在）
+  try { state.current = localStorage.getItem(PV_KID_KEY) || state.current; } catch (_) {}  // 先於 refresh()；小孩不存在時 refresh 會退回第一位
+
+  const pvPick = name => { state.current = name; refresh(); };
+  const pvTab = tab => { pv.tab = tab; pv.editing = null; render(); };
+  // 點擊後先停用按鈕，避免連點重複記錄；act 結束會 re-render 還原
+  const pvRun = (btn, fn) => { if (btn) btn.disabled = true; act(fn); };
+  const pvCount = input => Math.max(1, parseInt(input.value, 10) || 1);
+
+  // 主按鈕預記的貼紙：上回用的 → 該小孩最近一筆 log → 目錄第一種
+  function pvTarget() {
+    const byId = id => state.stickers.find(s => s.id === id);
+    return byId(state.lastSticker) || byId(state.detail?.log?.[0]?.sticker) || state.stickers[0] || null;
+  }
+
+  const pvChip = s => h("button", { class: "pv-chip", title: `記 ${s.label} ×1`,
+    onclick: e => pvRun(e.currentTarget, () => recordSticker({ sticker: s.id })) },
+    `${s.emoji} ${s.label}`, h("span", { class: "meta" }, `+${s.points}`),
+    s.condition ? h("small", { class: "pv-cond" }, `⏳ ${s.condition}`) : []);
+
+  const pvFold = (key, title, ...kids) => h("details", { class: "pv-fold", open: !!pv.open[key],
+    ontoggle: e => { pv.open[key] = e.target.open; } }, h("summary", {}, title), kids);
+
+  // ---- 記貼紙（主操作）----
+  function pvRecordCard(kid) {
+    const target = pvTarget();
+    const counts = state.detail?.stickers || {};
+    // 常用 = 該小孩累積次數多→少（同次數依目錄順序）
+    const ranked = state.stickers.map((s, i) => ({ s, i }))
+      .sort((a, b) => (counts[b.s.id] || 0) - (counts[a.s.id] || 0) || a.i - b.i).map(x => x.s);
+
+    const qty = h("input", { type: "number", min: "1", value: "1", inputmode: "numeric", "aria-label": "數量" });
+    const subText = () => `${target.emoji} ${target.label} ×${pvCount(qty)}`;
+    const sub = h("span", { class: "pv-main-sub" }, target ? subText() : "請先到「目錄」新增貼紙類型");
+    if (target) qty.oninput = () => { sub.textContent = subText(); };
+    const main = h("button", { class: "primary pv-main", disabled: !target,
+      onclick: e => pvRun(e.currentTarget, () => recordSticker({ sticker: target.id, count: pvCount(qty) })) },
+      "＋記", sub, target?.condition ? h("small", { class: "pv-cond" }, `⏳ ${target.condition}`) : []);
+
+    // 第二層：其餘貼紙 + 即興輸入（label + points + count）
+    const iLabel = h("input", { type: "text", placeholder: "貼紙名稱", "aria-label": "貼紙名稱" });
+    const iPoints = h("input", { type: "number", min: "0", placeholder: "分值", "aria-label": "分值" });
+    const iCount = h("input", { type: "number", min: "1", value: "1", "aria-label": "數量" });
+    const addAdhoc = e => {
+      const label = iLabel.value.trim(), points = parseInt(iPoints.value, 10);
+      if (!label || Number.isNaN(points)) return say("請填貼紙名稱與分值", true);
+      pvRun(e.currentTarget, () => recordSticker({ label, points, count: pvCount(iCount) }));
+    };
+    const rest = ranked.slice(PV_CHIPS);
+
+    return h("div", { class: "card", id: "pv-record" },
+      h("div", { class: "tabs", role: "group", "aria-label": "選小孩" }, state.kids.map(k =>
+        h("button", { class: "tab" + (k.name === state.current ? " active" : ""), onclick: () => pvPick(k.name) },
+          kidLabel(k), h("span", { class: "pts" }, `${k.score} 分`)))),
+      h("div", { class: "pv-big" }, main, h("label", { class: "pv-qty" }, "數量", qty)),
+      ranked.length ? h("div", { class: "pv-chips" }, ranked.slice(0, PV_CHIPS).map(pvChip)) : [],
+      pvFold("adhoc", "換別種／即興貼紙",
+        rest.length ? h("div", { class: "pv-chips" }, rest.map(pvChip)) : [],
+        h("div", { class: "form" }, iLabel, iPoints, iCount, h("button", { onclick: addAdhoc }, "記錄"))));
+  }
+
+  // 內嵌兩步確認（取代原生 confirm 對話框）：第一下變「再按一次確認」並轉紅，
+  // 3 秒內第二下才執行；避免手滑誤操作，也不跳出 app 語境。
+  // 抓原始 childNodes（文字節點 + −分數 meta span 都在），還原時原樣放回去。
+  let confirmArm = null;  // { btn, timer, run, label, nodes }
+  function armConfirm(btn, run) {
+    if (confirmArm && confirmArm.btn === btn) {
+      clearTimeout(confirmArm.timer);
+      confirmArm = null;
+      pvRun(btn, run);
+      return;
+    }
+    const nodes = Array.from(btn.childNodes);
+    const label = btn.textContent;
+    btn.textContent = "再按一次確認";
+    btn.classList.add("confirming");
+    confirmArm = { btn, label, nodes, timer: setTimeout(() => {
+      confirmArm = null;
+      btn.replaceChildren(...nodes);  // 還原原始子節點結構
+      btn.classList.remove("confirming");
+    }, 3000) };
+  }
+
+  // ---- 開店日：每個獎品一張小卡（next_shop 由後端 list_rewards 算好；無 shop_weeks＝隨兌）----
+  const pvMD = iso => iso.slice(5).replace("-", "/");  // YYYY-MM-DD → MM/DD
+  // 距今幾天（本地日曆日；用 UTC 換算避開夏令時間差）
+  const pvDaysUntil = iso => {
+    const t = new Date(), [y, m, d] = iso.split("-").map(Number);
+    return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5);
+  };
+  // 開店日文案（家庭固定開店日；shop_open 與 next_shop 由後端算好）
+  const pvShopText = r =>
+    !r.shop_weeks ? "隨兌"
+    : r.shop_open ? "本周開店中"
+    : !r.next_shop ? "尚未設定開店日（首次兌獎日即開店日）"
+    : `開店日 ${pvMD(r.next_shop)}（剩 ${pvDaysUntil(r.next_shop)} 天）`;
+  // 已有開店日但今天不在窗內；無 anchor 的首兌不算關店（後端放行並定下開店日）
+  const pvShopClosed = r => r.shop_open === false && !!r.next_shop;
+  function pvShopCards() {
+    const rewards = [...state.rewards].sort((a, b) => a.cost - b.cost);
+    if (!rewards.length) return [];
+    return h("div", { class: "pv-shops", id: "pv-shops" }, rewards.map(r =>
+      h("div", { class: "pv-shop" + (r.shop_open ? " open" : "") }, h("b", {}, r.label),
+        h("span", {}, pvShopText(r)))));
+  }
+
+  // ---- 兌換（大人操作；小孩頁只讀）----
+  function pvRedeemCard(kid) {
+    const rewards = [...state.rewards].sort((a, b) => a.cost - b.cost);
+    return h("div", { class: "card" },
+      h("h2", {}, "兌換", h("span", { class: "meta" }, `${kid.display || kid.name} 目前 ${kid.score} 分`)),
+      pvShopCards(),
+      rewards.length
+        ? h("div", { class: "quick" }, rewards.map(r =>
+            h("button", {
+              disabled: pvShopClosed(r) || kid.score < r.cost,
+              title: pvShopClosed(r) ? `未到開店日（${pvMD(r.next_shop)} 開店）`
+                : kid.score < r.cost ? `分數不足（還差 ${r.cost - kid.score} 分）` : null,
+              onclick: e => { armConfirm(e.currentTarget, () => redeem(r)); },
+            }, r.label, h("span", { class: "meta" }, pvShopClosed(r) ? `${pvMD(r.next_shop)} 開店` : `−${r.cost}`))))
+        : h("div", { class: "empty" }, "尚無獎品，請到「目錄」新增"));
+  }
+
+  // ---- 配置：目錄列（顯示 / 就地修改 / 刪除）----
+  function pvCatalogRow(kind, item, fields) {
+    const key = kind + ":" + item.id;
+    const view = fields.view(item);
+    if (pv.editing !== key) {
+      return h("li", {}, h("span", { class: "grow" }, view.title, view.sub ? h("small", { class: "pv-cond" }, view.sub) : []),
+        view.badge || [], h("span", { class: "meta" }, view.meta),
+        h("button", { onclick: () => { pv.editing = key; render(); } }, "改"),
+        h("button", { class: "link", onclick: e => armConfirm(e.currentTarget, () => deleteItem(kind, item)) }, "刪除"));
+    }
+    const inputs = fields.edit(item);
+    return h("li", { class: "pv-edit" }, inputs.nodes,
+      h("button", { class: "primary", onclick: () => act(async () => {
+        const body = inputs.read();
+        await api(`/${kind}/${encodeURIComponent(item.id)}`, "PUT", body);
+        pv.editing = null;
+        return `已更新：${body.label}`;
+      }) }, "存"),
+      h("button", { onclick: () => { pv.editing = null; render(); } }, "取消"));
+  }
+
+  const PV_RARITIES = ["common", "rare", "epic"];  // 預設 common（第一項）
+  const pvStickerFields = {
+    view: s => ({ title: `${s.emoji} ${s.label}`, meta: `${s.points} 分`,
+                  sub: s.condition ? `⏳ ${s.condition}` : null,
+                  badge: s.rarity ? h("span", { class: "rarity " + s.rarity }, s.rarity) : null }),
+    edit: s => {
+      const emoji = h("input", { type: "text", class: "emoji", value: s.emoji });
+      const label = h("input", { type: "text", class: "grow", value: s.label });
+      const points = h("input", { type: "number", min: "0", value: String(s.points) });
+      const condition = h("input", { type: "text", class: "grow", value: s.condition || "", placeholder: "行為目標（可留空）", "aria-label": "行為目標" });
+      return { nodes: [emoji, label, points, condition],
+               read: () => ({ label: label.value.trim(), emoji: emoji.value.trim() || undefined, points: parseInt(points.value, 10),
+                              condition: condition.value.trim() }) };  // 空字串＝清除
+    },
+  };
+  const pvRewardFields = {
+    view: r => ({ title: r.label, meta: `${r.cost} 分` + (r.shop_weeks ? ` · 每 ${r.shop_weeks} 週開店` : "") }),
+    edit: r => {
+      const label = h("input", { type: "text", class: "grow", value: r.label });
+      const cost = h("input", { type: "number", min: "1", value: String(r.cost) });
+      const weeks = h("input", { type: "number", min: "1", value: r.shop_weeks ? String(r.shop_weeks) : "", placeholder: "開店週期(週)", "aria-label": "開店週期（週），留空＝隨時可兌" });
+      return { nodes: [label, cost, weeks],
+               read: () => ({ label: label.value.trim(), cost: parseInt(cost.value, 10),
+                              shop_weeks: parseInt(weeks.value, 10) || 0 }) };  // 0＝清除（隨時可兌）
+    },
+  };
+
+  function pvStickerSection() {
+    const emoji = h("input", { type: "text", class: "emoji", placeholder: "圖示", "aria-label": "圖示" });
+    const label = h("input", { type: "text", placeholder: "名稱", "aria-label": "貼紙名稱" });
+    const points = h("input", { type: "number", min: "0", placeholder: "分值", "aria-label": "分值" });
+    const rarity = h("select", { "aria-label": "稀有度" }, PV_RARITIES.map(r => h("option", { value: r }, r)));
+    const condition = h("input", { type: "text", placeholder: "行為目標（可留空，例：準備好明天用品）", "aria-label": "行為目標" });
+    const add = () => {
+      const p = parseInt(points.value, 10);
+      if (!label.value.trim() || Number.isNaN(p)) return say("請填貼紙名稱與分值", true);
+      act(async () => {
+        await api("/stickers", "POST", { label: label.value.trim(), emoji: emoji.value.trim() || undefined, points: p, rarity: rarity.value,
+                                         condition: condition.value.trim() || undefined });
+        return `已新增貼紙類型：${label.value.trim()}`;
+      });
+    };
+    return h("div", {}, h("h3", {}, "貼紙目錄"),
+      state.stickers.length
+        ? h("ul", { class: "list" }, state.stickers.map(s => pvCatalogRow("stickers", s, pvStickerFields)))
+        : h("div", { class: "empty" }, "目錄是空的"),
+      h("div", { class: "form" }, emoji, label, points, rarity, condition, h("button", { onclick: add }, "新增")));
+  }
+
+  function pvRewardSection() {
+    const tier = h("select", { "aria-label": "價位" }, PV_TIERS.map(t =>
+      h("option", { value: String(t.suggest) }, `${t.label}（約 ${t.suggest} 分）`)));
+    const label = h("input", { type: "text", placeholder: "獎品名稱", "aria-label": "獎品名稱" });
+    const cost = h("input", { type: "number", min: "1", placeholder: "所需分數", "aria-label": "所需分數", value: String(PV_TIERS[0].suggest) });
+    const weeks = h("input", { type: "number", min: "1", placeholder: "開店週期(週)", "aria-label": "開店週期（週），留空＝隨時可兌" });
+    tier.onchange = () => { cost.value = tier.value; };  // 選價位 → 預填建議分數，仍可自行改
+    const add = () => {
+      const c = parseInt(cost.value, 10);
+      if (!label.value.trim() || Number.isNaN(c)) return say("請填獎品名稱與所需分數", true);
+      act(async () => {
+        await api("/rewards", "POST", { label: label.value.trim(), cost: c, shop_weeks: parseInt(weeks.value, 10) || undefined });
+        return `已新增獎品：${label.value.trim()}`;
+      });
+    };
+    return h("div", {}, h("h3", {}, "獎品目錄"),
+      h("div", { class: "hint" }, "建議三個價位都放：快達撐住頭幾天，長期目標避免第二週失去動力。"),
+      PV_TIERS.map((t, i) => {
+        const items = state.rewards.filter(r => pvTierOf(r.cost) === t).sort((a, b) => a.cost - b.cost);
+        return h("div", {}, h("h3", {}, t.label, h("span", { class: "meta" }, pvTierRange(i))),
+          items.length
+            ? h("ul", { class: "list" }, items.map(r => pvCatalogRow("rewards", r, pvRewardFields)))
+            : h("div", { class: "empty" }, `尚無；建議新增約 ${t.suggest} 分的獎品`));
+      }),
+      h("div", { class: "form" }, tier, label, cost, weeks, h("button", { onclick: add }, "新增")));
+  }
+
+  function pvKidSection() {
+    const name = h("input", { type: "text", placeholder: "名字（唯一）", "aria-label": "小孩名字" });
+    const display = h("input", { type: "text", placeholder: "顯示名稱（選填）", "aria-label": "顯示名稱" });
+    const emoji = h("input", { type: "text", class: "emoji", placeholder: "頭像", "aria-label": "頭像" });
+    const add = () => {
+      const n = name.value.trim();
+      if (!n) return say("請填小孩名字", true);
+      act(async () => {
+        await api("/kids", "POST", { name: n, display: display.value.trim() || undefined, emoji: emoji.value.trim() || undefined });
+        state.current = n;
+        return `已新增小孩：${display.value.trim() || n}`;
+      });
+    };
+    return h("div", {}, h("h3", {}, "小孩"),
+      h("div", { class: "form" }, name, display, emoji, h("button", { onclick: add }, "新增小孩")));
+  }
+
+  // ---- 明細（既有 table()）----
+  const pvExport = path => h("a", { href: API + path, download: "" }).click();  // 後端回 attachment，頁面不跳走
+  function pvLogSection(kid) {
+    const d = state.detail || {};
+    return h("div", {},
+      h("div", { class: "form" },
+        h("button", { onclick: () => pvExport("/export.xlsx") }, "匯出 Excel（全部）"),
+        h("button", { onclick: () => pvExport("/" + encodeURIComponent(kid.name) + "/export.xlsx") },
+          `匯出 Excel（${kid.display || kid.name}）`)),
+      h("h3", {}, `${kidLabel(kid)} 收受`),
+      table(["時間", "貼紙", "分"], d.log, e => [
+        h("td", { class: "time" }, fmtTime(e.ts)), h("td", {}, `${e.label} ×${e.count}`),
+        h("td", { class: "num" }, `+${e.points}`)]),
+      h("h3", {}, `${kidLabel(kid)} 兌換`),
+      table(["時間", "獎品", "分"], d.reward_log, e => [
+        h("td", { class: "time" }, fmtTime(e.ts)), h("td", {}, e.label),
+        h("td", { class: "num" }, `−${e.cost}`)]));
+  }
+
+  // 分頁列：記／目錄／明細。還沒有小孩時只開放「目錄」（新增小孩在那裡）
+  function pvTabBar(active, hasKid) {
+    return h("div", { class: "pv-tabs", id: "pv-tabs", role: "tablist" }, PV_TABS.map(([key, label]) =>
+      h("button", { class: "pv-tab" + (key === active ? " active" : ""), id: "pv-tab-" + key, role: "tab",
+        "aria-selected": String(key === active), disabled: !hasKid && key !== "catalog",
+        onclick: () => pvTab(key) }, label)));
+  }
+
+  function renderParentView() {
+    const kid = me();
+    const tab = kid ? pv.tab : "catalog";
+    if (state.current) try { localStorage.setItem(PV_KID_KEY, state.current); } catch (_) {}
+    const card = (...kids) => h("div", { class: "card" }, kids);
+    const panels = tab === "record" ? [pvRecordCard(kid)]
+      : tab === "catalog" ? [
+          ...(kid ? [] : [h("div", { class: "hint" }, "還沒有小孩，請先在下方新增一位。")]),
+          card(pvStickerSection()), card(pvRewardSection()), card(pvKidSection())]
+      : [pvRedeemCard(kid), card(pvLogSection(kid))];
+    $("parent-view-content").replaceChildren(pvTabBar(tab, !!kid), ...panels);
+  }
+
+  // ==================== 小孩頁（星空夜藍 + 大圓章；SPEC §7.3、docs/ref/visual-decision.md） ====================
+  // 小孩頁專用的大圖章與進度格（共用 stickerTile / goalBar 保持不動，大人頁仍使用它們）。
+  //   已擁有＝彩色圓章（多張時右下角 ×N）；缺的＝灰階剪影 + 大「?」；不放文字標籤，認圖不認字。
+  function kidStamp(s, n, isNew) {
+    if (n <= 0) {
+      return h("div", { class: "stamp locked", title: "還沒收集" },
+        h("span", { class: "pic" }, s.emoji), h("span", { class: "q" }, "?"));
+    }
+    // 新的一張：沿用該貼紙的固定微旋轉（kidAngle 值不變），剛貼上去的手感；純靜態、無 keyframes
+    const style = isNew
+      ? `--tile:${tileColor(s.id)};--rot:${kidAngle(s.id + ":new").toFixed(2)}deg`
+      : `--tile:${tileColor(s.id)}`;
+    return h("div", { class: "stamp" + (s.rarity === "epic" ? " epic" : ""), style, title: s.label },
+      s.rarity === "epic" ? h("span", { class: "epic-mark" }, "✦") : [],
+      isNew ? h("span", { class: "tag" }, "NEW") : [],
+      h("span", { class: "pic" }, s.emoji),
+      n > 1 ? h("span", { class: "qty" }, `×${n}`) : []);
+  }
+
+  // Token Board：獎品在上，下方圓格逐格點亮（格子數 = 所需分數）
+  function kidGoal(reward, score) {
+    const filled = Math.min(score, reward.cost);
+    const rows = Math.ceil(reward.cost / 20);
+    const cols = Math.ceil(reward.cost / rows);
+    return h("div", { class: "kid-goal" },
+      h("div", { class: "goal-head" },
+        h("span", { class: "gift" }, "🎁"),
+        h("span", { class: "goal-name" }, reward.label),
+        h("span", { class: "goal-num" }, score >= reward.cost ? "✓" : `還差 ${reward.cost - filled} 格`)),
+      h("div", { class: "cells", style: `grid-template-columns:repeat(${cols},1fr)` },
+        Array.from({ length: reward.cost }, (_, i) => h("div", { class: "cell" + (i < filled ? " on" : "") }))));
+  }
+
+  // ---- 貼紙冊（album）：每頁 4×3 槽，一張貼紙一槽，貼滿自動出下一頁 ----
+  const KID_SLOTS = 12;   // 一頁槽數（4 欄 × 3 列）
+  const KID_FOIL_MIN = 5; // 同一張 >= 此數 → 金色燙印框
+
+  // 依 key 算出固定的微旋轉角度（±4~7°）：同一 key 永遠同角度，不用 Math.random
+  function kidAngle(key) {
+    let hash = 0;
+    for (const ch of key) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
+    hash = Math.imul(hash ^ (hash >>> 15), 2246822507) >>> 0;
+    return (hash & 1 ? 1 : -1) * (4 + ((hash >>> 1) % 1000) / 100);
+  }
+
+  // 一張貼上去的貼紙；copy = 該貼紙第幾張（同貼紙的每一張角度不同但都固定）
+  function kidPasted(p) {
+    const { s, copy, n } = p;
+    return h("div", { class: "slot" },
+      h("div", {
+        class: "stamp" + (n >= KID_FOIL_MIN ? " foil" : "") + (s.rarity === "epic" ? " epic" : ""),
+        style: `--tile:${tileColor(s.id)};--rot:${kidAngle(`${s.id}:${copy}`).toFixed(2)}deg`, title: s.label },
+        s.rarity === "epic" ? h("span", { class: "epic-mark" }, "✦") : [],
+        h("span", { class: "pic" }, s.emoji)));
+  }
+
+  // 缺的虛線空格；ghost = 還沒收集的貼紙（灰階剪影 + ?），沒 ghost 的空格放淡「+」
+  function kidEmptySlot(ghost) {
+    return h("div", { class: "slot empty", title: "還沒貼" },
+      ghost ? [h("span", { class: "ghost" }, ghost.emoji), h("span", { class: "q" }, "?")]
+            : [h("span", { class: "plus" }, "+")]);
+  }
+
+  // 貼紙冊資料（純函式，test_kid_album.js 直接抽出來測；勿在此區塊碰 DOM）
+  // pageCount：至少 1 頁，貼滿 12 張仍是 1 頁、第 13 張才出第 2 頁；
+  // complete：目錄非空且每一種都 ≥1（無缺口）＝全集
+  // pages[i]：{ cells 貼上的、slotGhosts 放進空槽的剪影、rowGhosts 空槽不夠放、改排在頁下的「還缺」列 }
+  //   剪影只放最後一頁；滿頁（12 張）沒空槽時，缺口剪影全進 rowGhosts＝滿頁＋缺口同屏
+  // KID_ALBUM_BEGIN
+  function kidAlbum(stickers, counts) {
+    const known = new Set(stickers.map(s => s.id));
+    // 目錄已刪、但小孩仍有計數的貼紙也要貼上
+    const owned = [...stickers, ...Object.keys(counts).filter(id => !known.has(id) && counts[id] > 0)
+      .map(id => ({ id, label: "貼紙", emoji: "🎟️" }))];
+    const pasted = owned.flatMap(s => Array.from({ length: counts[s.id] || 0 },
+      (_, copy) => ({ s, copy, n: counts[s.id] })));
+    const missing = stickers.filter(s => !(counts[s.id] > 0));
+    const pageCount = Math.max(1, Math.ceil(pasted.length / KID_SLOTS));
+    const pages = Array.from({ length: pageCount }, (_, p) => {
+      const cells = pasted.slice(p * KID_SLOTS, (p + 1) * KID_SLOTS);
+      const ghosts = p === pageCount - 1 ? missing : [];
+      const room = KID_SLOTS - cells.length;
+      return { cells, slotGhosts: ghosts.slice(0, room), rowGhosts: ghosts.slice(room) };
+    });
+    return { pasted, missing, pageCount, pages, complete: stickers.length > 0 && missing.length === 0 };
+  }
+  // KID_ALBUM_END
+
+  // 貼紙冊分頁：回傳每一頁的節點（一次只顯示其中一頁）
+  function kidPages(stickers, counts) {
+    const { pages, complete } = kidAlbum(stickers, counts);
+
+    return pages.map(({ cells, slotGhosts, rowGhosts }, p) => {
+      const full = cells.length === KID_SLOTS;
+      return h("div", { class: "kid-page" + (complete ? " complete" : "") },
+        h("div", { class: "page-grid" },
+          cells.map(kidPasted),
+          Array.from({ length: KID_SLOTS - cells.length }, (_, i) => kidEmptySlot(slotGhosts[i]))),
+        rowGhosts.length ? h("div", { class: "ghost-row" }, rowGhosts.map(kidEmptySlot)) : [],
+        h("div", { class: "page-foot" },
+          h("span", { class: "pg" }, `第 ${p + 1} 頁`),
+          complete ? h("span", { class: "crest", title: "全集" }, "✦ 全集") : [],
+          h("span", { class: "fill" + (full ? " full" : "") }, `${cells.length} / ${KID_SLOTS}${full ? " ✓" : ""}`)));
+    });
+  }
+
+  // ---- 畫面切換：封面 → 新的一張（可略）→ 貼紙冊第 1..N 頁；線性序列，idx 指到目前那一屏 ----
+  const kidNav = { kid: null, idx: 0, len: 0, fade: false };
+
+  function kidGo(delta) {
+    const idx = Math.max(0, Math.min(kidNav.len - 1, kidNav.idx + delta));
+    if (idx === kidNav.idx) return;
+    kidNav.idx = idx;
+    kidNav.fade = true;
+    renderKidView();
+  }
+
+  function kidNavBar(hasPrev, hasNext) {
+    const arrow = (label, dir, on, glyph) => h("button", {
+      class: "kid-arrow" + (on ? "" : " off"), "aria-label": label, disabled: !on, onclick: () => kidGo(dir) }, glyph);
+    return h("div", { class: "kid-nav" }, arrow("上一頁", -1, hasPrev, "‹"), arrow("下一頁", 1, hasNext, "›"));
+  }
+
+  function renderKidView() {
+    const k = me();
+    if (!k) {
+      $("kid-view-content").replaceChildren(h("p", { class: "kid-empty" }, "還沒有小朋友"));
+      return;
+    }
+    if (kidNav.kid !== k.name) Object.assign(kidNav, { kid: k.name, idx: 0 });  // 換小孩 → 回封面
+    const counts = state.detail?.stickers || k.stickers || {};
+    const score = k.score || 0;
+
+    // 新的一張：detail.log[0]（最新一筆）若有 count。目錄已刪的貼紙以 log 內 label 頂替
+    const last = state.detail?.log?.[0];
+    const newest = last && last.count
+      ? { s: state.stickers.find(x => x.id === last.sticker)
+            || { id: last.sticker || "", label: last.label || "貼紙", emoji: "🎟️" },
+          n: last.count }
+      : null;
+    // 往最近獎品：只對 cost 最小的獎品
+    const next = state.rewards.filter(r => r.cost > 0).sort((a, b) => a.cost - b.cost)[0];
+
+    // 畫面序列：① 封面 ② 新的一張 ③ 貼紙冊每頁一屏
+    const complete = kidAlbum(state.stickers, counts).complete;  // 全集 → 封面頭像升級金色燙印環
+    const screens = [{ cover: true, body: h("div", { class: "kid-cover" + (complete ? " complete" : "") },
+      h("div", { class: "avatar" }, k.emoji || "🙂"),
+      h("div", { class: "book-title" }, `${k.display || k.name}的貼紙本`),
+      h("div", { class: "kid-score" },
+        h("span", { class: "num" }, String(score)), h("span", { class: "star" }, "⭐"))) }];
+    if (newest || next) screens.push({ body: h("div", {},
+      newest ? h("div", { class: "kid-new" },
+        kidStamp(newest.s, newest.n, true), h("div", { class: "new-title" }, "新的一張")) : [],
+      next ? kidGoal(next, score) : []) });
+    for (const pg of kidPages(state.stickers, counts)) screens.push({ body: pg });
+
+    kidNav.len = screens.length;
+    kidNav.idx = Math.min(kidNav.idx, screens.length - 1);
+    const cur = screens[kidNav.idx];
+    const nav = cur.cover
+      ? h("div", { class: "kid-nav" }, h("button", { class: "kid-start", onclick: () => kidGo(1) }, "開始看"))
+      : kidNavBar(kidNav.idx > 0, kidNav.idx < screens.length - 1);
+
+    $("kid-view-content").replaceChildren(
+      h("div", { class: "kid-screen" + (kidNav.fade ? " fade" : "") }, cur.body), nav);
+    kidNav.fade = false;
+  }
+
+  // 滑動（左滑下一屏、右滑上一屏）與鍵盤 ← →；只在小孩頁生效
+  let kidPointer = null;
+  $("kid-view").addEventListener("pointerdown", e => { kidPointer = { x: e.clientX, y: e.clientY }; });
+  $("kid-view").addEventListener("pointerup", e => {
+    if (!kidPointer) return;
+    const dx = e.clientX - kidPointer.x, dy = e.clientY - kidPointer.y;
+    kidPointer = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) kidGo(dx < 0 ? 1 : -1);
+  });
+  $("kid-view").addEventListener("pointercancel", () => { kidPointer = null; });
+  document.addEventListener("keydown", e => {
+    if (state.view !== "kid" || e.target.closest?.("input, textarea, select")) return;
+    if (e.key === "ArrowRight") kidGo(1);
+    else if (e.key === "ArrowLeft") kidGo(-1);
+  });
+
+  // ==================== 共用元件（兩頁都可用，勿重複定義） ====================
+  // 淡彩底色：星星淡黃、彩虹淡藍、gold 淡橘；其他貼紙 id → hash → 10 色循環
+  const TILE_FIXED = { star: "#fdf3c8", rainbow: "#d8eafb", gold: "#fde3c4" };
+  const TILE_PALETTE = ["#fbd9d9", "#e4f2cf", "#dcd9f5", "#cdeee6", "#f8dcec",
+                        "#efe5cc", "#d3e6f2", "#f3e0cf", "#dfeecb", "#e9d8f0"];
+  function tileColor(id) {
+    if (TILE_FIXED[id]) return TILE_FIXED[id];
+    let hash = 0;
+    for (const ch of id) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
+    return TILE_PALETTE[hash % TILE_PALETTE.length];
+  }
+
+  // N 個 emoji 橫排疊放；N > 6 → 5 個 + "..."；N=0 → 灰階剪影 + "?"
+  function stickerTile(s, n, isNew) {
+    if (n <= 0) {
+      return h("div", { class: "tile empty-slot", title: "尚未收集" },
+        h("div", { class: "stack" }, h("span", {}, s.emoji)),
+        h("span", { class: "label" }, "?"));
+    }
+    const shown = Math.min(n, n > 6 ? 5 : 6);
+    return h("div", { class: "tile", style: `--tile:${tileColor(s.id)}` },
+      isNew ? h("span", { class: "badge" }, "NEW") : [],
+      h("div", { class: "stack" },
+        Array.from({ length: shown }, () => h("span", {}, s.emoji)),
+        n > 6 ? h("span", { class: "more" }, "...") : []),
+      h("span", { class: "label" }, s.label));
+  }
+
+  // 一排小格子，已累積分數以 accent 填滿；列數多時平均分成幾列（每列至多約 20 格）
+  function goalBar(reward, score) {
+    const filled = Math.min(score, reward.cost);
+    const rows = Math.ceil(reward.cost / 20);
+    const cols = Math.ceil(reward.cost / rows);
+    const text = score >= reward.cost
+      ? `已達「${reward.label}」所需分數，可兌換`
+      : `離最近獎品「${reward.label}」還差 ${reward.cost - score} 分`;
+    return h("div", {},
+      h("div", { class: "goal-text" }, text, h("span", { class: "meta" }, `${filled} / ${reward.cost}`)),
+      h("div", { class: "cells", style: `grid-template-columns:repeat(${cols},1fr)` },
+        Array.from({ length: reward.cost }, (_, i) => h("div", { class: "cell" + (i < filled ? " on" : "") }))));
+  }
+
+  function table(heads, rows, rowCells) {
+    if (!rows || !rows.length) return h("div", { class: "empty" }, "尚無紀錄");
+    return h("table", {},
+      h("thead", {}, h("tr", {}, heads.map((t, i) => h("th", { class: i === 2 ? "num" : "" }, t)))),
+      h("tbody", {}, rows.map(r => h("tr", {}, rowCells(r)))));
+  }
+
+  // ---- 共用動作 ----
+  async function recordSticker(payload) {
+    const r = await api(`/${encodeURIComponent(state.current)}/sticker`, "POST", payload);
+    if (r.sticker) state.lastSticker = r.sticker;  // 記住上回用的類型，供大人頁「＋記」1 下
+    return `已記錄：${r.emoji} ${r.label} ×${r.count}，+${r.points_earned} 分，目前 ${r.total_score} 分`;
+  }
+
+  async function redeem(reward) {
+    const r = await api(
+      `/${encodeURIComponent(state.current)}/reward/${encodeURIComponent(reward.id)}`, "POST")
+      .catch(e => { throw new Error(e.message === "shop_closed" ? "還沒到開店日" : e.message); });
+    return `已兌換：${r.label}，−${r.points_deducted} 分，剩 ${r.remaining_score} 分`;
+  }
+
+  function deleteItem(kind, item) {
+    // 兩步確認已由 armConfirm 在呼叫端處理；這裡直接執行 DELETE
+    act(async () => {
+      await api(`/${kind}/${encodeURIComponent(item.id)}`, "DELETE");
+      return `已刪除：${item.label}`;
+    });
+  }
+
+  const intOf = id => Number($(id).value);
+
+  // ---- 入口初始化：依 URL ?view=kid 決定開哪個入口 ----
+  if (state.view === "kid") switchView("kid");
+  else switchView("parent");
+
+  refresh();
+</script>
+
+</body>
+</html>

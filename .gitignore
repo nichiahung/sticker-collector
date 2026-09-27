@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.edge-tmp*
+.edge-cat
+.edge-final
+
+# 內部流程文件不公開
+docs/PDCA.md
+docs/INDEX.md
+docs/threads/
+docs/adr/
+SPEC.md
+docs/PRD.md
+docs/blueprint.md
+docs/parent-design.md
+docs/ROADMAP.md
+docs/competitive.md
+docs/ref/
+docs/book-shots/
