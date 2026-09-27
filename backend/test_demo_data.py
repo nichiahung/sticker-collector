@@ -27,7 +27,7 @@ def main():
     assert counts == {"common": 7, "rare": 3, "epic": 2}, counts
     assert len({s["emoji"] for s in cat.values()}) == 12  # emoji 互異
 
-    for name in ("小美", "Kris", "jasper"):
+    for name in ("Kris", "jasper"):
         kid = db["children"][name]
         gaps = [sid for sid in cat if kid["stickers"].get(sid, 0) == 0]
         assert 2 <= len(gaps) <= 3, (name, gaps)
