@@ -1,277 +1,277 @@
 {
-  "children": {
-    "Kris": {
-      "display": "Kris",
-      "emoji": "🐣",
-      "score": 25,
-      "stickers": {
-        "star": 5,
-        "rainbow": 1,
-        "gold": 1,
-        "cat": 1,
-        "apple": 1,
-        "cloud": 1,
-        "cookie": 1,
-        "frog": 1,
-        "unicorn": 1,
-        "moon": 1
-      },
-      "log": [
-        {
-          "ts": "2026-09-25T16:24:39+08:00",
-          "kind": "star",
-          "count": 1,
-          "earned": 1
-        },
-        {
-          "ts": "2026-09-25T16:24:40+08:00",
-          "kind": "rainbow",
-          "count": 1,
-          "earned": 2
-        },
-        {
-          "ts": "2026-09-25T16:24:41+08:00",
-          "kind": "gold",
-          "count": 1,
-          "earned": 5
-        },
-        {
-          "ts": "2026-09-26T09:00:00+08:00",
-          "sticker": "star",
-          "label": "星星",
-          "count": 4,
-          "points": 4
-        },
-        {
-          "ts": "2026-09-26T09:01:00+08:00",
-          "sticker": "cat",
-          "label": "小貓",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:02:00+08:00",
-          "sticker": "apple",
-          "label": "蘋果",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:03:00+08:00",
-          "sticker": "cloud",
-          "label": "雲朵",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:04:00+08:00",
-          "sticker": "cookie",
-          "label": "餅乾",
-          "count": 1,
-          "points": 2
-        },
-        {
-          "ts": "2026-09-26T09:05:00+08:00",
-          "sticker": "frog",
-          "label": "青蛙",
-          "count": 1,
-          "points": 2
-        },
-        {
-          "ts": "2026-09-26T09:06:00+08:00",
-          "sticker": "unicorn",
-          "label": "獨角獸",
-          "count": 1,
-          "points": 3
-        },
-        {
-          "ts": "2026-09-26T09:07:00+08:00",
-          "sticker": "moon",
-          "label": "月亮",
-          "count": 1,
-          "points": 3
-        }
-      ],
-      "rewards": []
+ "children": {
+  "Kris": {
+   "display": "Kris",
+   "emoji": "🐣",
+   "score": 25,
+   "stickers": {
+    "star": 5,
+    "rainbow": 1,
+    "gold": 1,
+    "cat": 1,
+    "apple": 1,
+    "cloud": 1,
+    "cookie": 1,
+    "frog": 1,
+    "unicorn": 1,
+    "moon": 1
+   },
+   "log": [
+    {
+     "ts": "2026-09-25T16:24:39+08:00",
+     "kind": "star",
+     "count": 1,
+     "earned": 1
     },
-    "jasper": {
-      "display": "jasper",
-      "emoji": "🐣",
-      "score": 17,
-      "stickers": {
-        "star": 1,
-        "rainbow": 1,
-        "cat": 1,
-        "apple": 1,
-        "cloud": 1,
-        "cookie": 1,
-        "frog": 1,
-        "moon": 1,
-        "gem": 1
-      },
-      "log": [
-        {
-          "ts": "2026-09-26T09:00:00+08:00",
-          "sticker": "star",
-          "label": "星星",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:01:00+08:00",
-          "sticker": "rainbow",
-          "label": "彩虹",
-          "count": 1,
-          "points": 2
-        },
-        {
-          "ts": "2026-09-26T09:02:00+08:00",
-          "sticker": "cat",
-          "label": "小貓",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:03:00+08:00",
-          "sticker": "apple",
-          "label": "蘋果",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:04:00+08:00",
-          "sticker": "cloud",
-          "label": "雲朵",
-          "count": 1,
-          "points": 1
-        },
-        {
-          "ts": "2026-09-26T09:05:00+08:00",
-          "sticker": "cookie",
-          "label": "餅乾",
-          "count": 1,
-          "points": 2
-        },
-        {
-          "ts": "2026-09-26T09:06:00+08:00",
-          "sticker": "frog",
-          "label": "青蛙",
-          "count": 1,
-          "points": 2
-        },
-        {
-          "ts": "2026-09-26T09:07:00+08:00",
-          "sticker": "moon",
-          "label": "月亮",
-          "count": 1,
-          "points": 3
-        },
-        {
-          "ts": "2026-09-26T09:08:00+08:00",
-          "sticker": "gem",
-          "label": "寶石",
-          "count": 1,
-          "points": 4
-        }
-      ],
-      "rewards": []
+    {
+     "ts": "2026-09-25T16:24:40+08:00",
+     "kind": "rainbow",
+     "count": 1,
+     "earned": 2
+    },
+    {
+     "ts": "2026-09-25T16:24:41+08:00",
+     "kind": "gold",
+     "count": 1,
+     "earned": 5
+    },
+    {
+     "ts": "2026-09-26T09:00:00+08:00",
+     "sticker": "star",
+     "label": "星星",
+     "count": 4,
+     "points": 4
+    },
+    {
+     "ts": "2026-09-26T09:01:00+08:00",
+     "sticker": "cat",
+     "label": "小貓",
+     "count": 1,
+     "points": 1
+    },
+    {
+     "ts": "2026-09-26T09:02:00+08:00",
+     "sticker": "apple",
+     "label": "蘋果",
+     "count": 1,
+     "points": 1
+    },
+    {
+     "ts": "2026-09-26T09:03:00+08:00",
+     "sticker": "cloud",
+     "label": "雲朵",
+     "count": 1,
+     "points": 1
+    },
+    {
+     "ts": "2026-09-26T09:04:00+08:00",
+     "sticker": "cookie",
+     "label": "餅乾",
+     "count": 1,
+     "points": 2
+    },
+    {
+     "ts": "2026-09-26T09:05:00+08:00",
+     "sticker": "frog",
+     "label": "青蛙",
+     "count": 1,
+     "points": 2
+    },
+    {
+     "ts": "2026-09-26T09:06:00+08:00",
+     "sticker": "unicorn",
+     "label": "獨角獸",
+     "count": 1,
+     "points": 3
+    },
+    {
+     "ts": "2026-09-26T09:07:00+08:00",
+     "sticker": "moon",
+     "label": "月亮",
+     "count": 1,
+     "points": 3
     }
+   ],
+   "rewards": []
   },
-  "stickers": {
-    "star": {
-      "label": "星星",
-      "emoji": "⭐",
-      "points": 1,
-      "rarity": "common",
-      "condition": "準備好明天用品"
+  "jasper": {
+   "display": "jasper",
+   "emoji": "🐣",
+   "score": 17,
+   "stickers": {
+    "star": 1,
+    "rainbow": 1,
+    "cat": 1,
+    "apple": 1,
+    "cloud": 1,
+    "cookie": 1,
+    "frog": 1,
+    "moon": 1,
+    "gem": 1
+   },
+   "log": [
+    {
+     "ts": "2026-09-26T09:00:00+08:00",
+     "sticker": "star",
+     "label": "星星",
+     "count": 1,
+     "points": 1
     },
-    "rainbow": {
-      "label": "彩虹",
-      "emoji": "🌈",
-      "points": 2,
-      "rarity": "common",
-      "condition": "睡前流程自己完成"
+    {
+     "ts": "2026-09-26T09:01:00+08:00",
+     "sticker": "rainbow",
+     "label": "彩虹",
+     "count": 1,
+     "points": 2
     },
-    "gold": {
-      "label": "金色",
-      "emoji": "🏆",
-      "points": 5,
-      "rarity": "epic",
-      "condition": "一週每天準時"
+    {
+     "ts": "2026-09-26T09:02:00+08:00",
+     "sticker": "cat",
+     "label": "小貓",
+     "count": 1,
+     "points": 1
     },
-    "cat": {
-      "label": "小貓",
-      "emoji": "🐱",
-      "points": 1,
-      "rarity": "common",
-      "condition": "主動收拾玩具"
+    {
+     "ts": "2026-09-26T09:03:00+08:00",
+     "sticker": "apple",
+     "label": "蘋果",
+     "count": 1,
+     "points": 1
     },
-    "apple": {
-      "label": "蘋果",
-      "emoji": "🍎",
-      "points": 1,
-      "rarity": "common",
-      "condition": "好好吃完一餐"
+    {
+     "ts": "2026-09-26T09:04:00+08:00",
+     "sticker": "cloud",
+     "label": "雲朵",
+     "count": 1,
+     "points": 1
     },
-    "cloud": {
-      "label": "雲朵",
-      "emoji": "☁️",
-      "points": 1,
-      "rarity": "common",
-      "condition": "準時上床"
+    {
+     "ts": "2026-09-26T09:05:00+08:00",
+     "sticker": "cookie",
+     "label": "餅乾",
+     "count": 1,
+     "points": 2
     },
-    "cookie": {
-      "label": "餅乾",
-      "emoji": "🍪",
-      "points": 2,
-      "rarity": "common",
-      "condition": "自己穿好衣服鞋子"
+    {
+     "ts": "2026-09-26T09:06:00+08:00",
+     "sticker": "frog",
+     "label": "青蛙",
+     "count": 1,
+     "points": 2
     },
-    "frog": {
-      "label": "青蛙",
-      "emoji": "🐸",
-      "points": 2,
-      "rarity": "common",
-      "condition": "幫忙做一件家事"
+    {
+     "ts": "2026-09-26T09:07:00+08:00",
+     "sticker": "moon",
+     "label": "月亮",
+     "count": 1,
+     "points": 3
     },
-    "unicorn": {
-      "label": "獨角獸",
-      "emoji": "🦄",
-      "points": 3,
-      "rarity": "rare",
-      "condition": "作業全對"
-    },
-    "moon": {
-      "label": "月亮",
-      "emoji": "🌙",
-      "points": 3,
-      "rarity": "rare",
-      "condition": "主動整理書包和房間"
-    },
-    "gem": {
-      "label": "寶石",
-      "emoji": "💎",
-      "points": 4,
-      "rarity": "rare",
-      "condition": "不用提醒就完成功課"
-    },
-    "dragon": {
-      "label": "神龍",
-      "emoji": "🐉",
-      "points": 5,
-      "rarity": "epic",
-      "condition": "一週作業全對"
+    {
+     "ts": "2026-09-26T09:08:00+08:00",
+     "sticker": "gem",
+     "label": "寶石",
+     "count": 1,
+     "points": 4
     }
-  },
-  "rewards": {
-    "small": {
-      "label": "小獎勵",
-      "cost": 10
-    },
-    "big": {
-      "label": "大獎勵",
-      "cost": 30,
-      "shop_weeks": 2
-    }
+   ],
+   "rewards": []
   }
+ },
+ "stickers": {
+  "star": {
+   "label": "星星",
+   "emoji": "⭐",
+   "points": 1,
+   "rarity": "common",
+   "condition": "準備好明天用品"
+  },
+  "rainbow": {
+   "label": "彩虹",
+   "emoji": "🌈",
+   "points": 2,
+   "rarity": "common",
+   "condition": "睡前流程自己完成"
+  },
+  "gold": {
+   "label": "金色",
+   "emoji": "🏆",
+   "points": 5,
+   "rarity": "epic",
+   "condition": "一週每天準時"
+  },
+  "cat": {
+   "label": "小貓",
+   "emoji": "🐱",
+   "points": 1,
+   "rarity": "common",
+   "condition": "主動收拾玩具"
+  },
+  "apple": {
+   "label": "蘋果",
+   "emoji": "🍎",
+   "points": 1,
+   "rarity": "common",
+   "condition": "好好吃完一餐"
+  },
+  "cloud": {
+   "label": "雲朵",
+   "emoji": "☁️",
+   "points": 1,
+   "rarity": "common",
+   "condition": "準時上床"
+  },
+  "cookie": {
+   "label": "餅乾",
+   "emoji": "🍪",
+   "points": 2,
+   "rarity": "common",
+   "condition": "自己穿好衣服鞋子"
+  },
+  "frog": {
+   "label": "青蛙",
+   "emoji": "🐸",
+   "points": 2,
+   "rarity": "common",
+   "condition": "幫忙做一件家事"
+  },
+  "unicorn": {
+   "label": "獨角獸",
+   "emoji": "🦄",
+   "points": 3,
+   "rarity": "rare",
+   "condition": "作業全對"
+  },
+  "moon": {
+   "label": "月亮",
+   "emoji": "🌙",
+   "points": 3,
+   "rarity": "rare",
+   "condition": "主動整理書包和房間"
+  },
+  "gem": {
+   "label": "寶石",
+   "emoji": "💎",
+   "points": 4,
+   "rarity": "rare",
+   "condition": "不用提醒就完成功課"
+  },
+  "dragon": {
+   "label": "神龍",
+   "emoji": "🐉",
+   "points": 5,
+   "rarity": "epic",
+   "condition": "一週作業全對"
+  }
+ },
+ "rewards": {
+  "small": {
+   "label": "Roblox 遊戲時間 30 分鐘",
+   "cost": 10
+  },
+  "big": {
+   "label": "Roblox 假日遊戲時間 2 小時",
+   "cost": 30,
+   "shop_weeks": 2
+  }
+ }
 }
