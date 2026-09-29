@@ -193,7 +193,7 @@
 
   /* ===== 小孩頁專屬（一律以 #kid-view 為前綴，不影響大人頁）=====
      視覺語言：星空夜藍 + 彩色大圓章貼紙（docs/ref/visual-decision.md）。
-     認圖不認字：圖大字少；全部靜態，無動畫。 */
+     認圖不認字：圖大字少；新貼紙只播放一次 pop 動畫。 */
   /* 繪本式一次一屏（SPEC §7.6）：小孩頁時 body 鎖成一個 viewport 高，#kid-view 撐滿剩餘高度，不直捲 */
   body:has(#kid-view:not([hidden])) {
     height: 100vh; height: 100dvh; min-height: 0; overflow: hidden;
@@ -306,9 +306,16 @@
     font-size: 64px; font-weight: 800; color: rgba(255,255,255,.9); text-shadow: 0 2px 10px rgba(0,0,0,.5);
   }
 
-  /* 新的一張：最新那張大圖章置中（靜態金框＋微旋轉，剛貼上來的），下方接目標進度 */
+  /* 新的一張：最新那張大圖章置中，下方接目標進度 */
   #kid-view .kid-new { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 22px; }
   #kid-view .kid-new .stamp { width: 160px; height: 160px; margin: 0; border-color: #ffd76a; transform: rotate(var(--rot, 0deg)); }
+  #kid-view .kid-new .stamp.pop { animation: kidPop .55s ease-out 1 both; }
+  @keyframes kidPop {
+    from { opacity: 0; transform: rotate(var(--rot, 0deg)) scale(.65); }
+    65% { opacity: 1; transform: rotate(var(--rot, 0deg)) scale(1.12); }
+    to { transform: rotate(var(--rot, 0deg)) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) { #kid-view .kid-new .stamp.pop { animation: none; } }
   #kid-view .kid-new .stamp .pic { font-size: 92px; }
   #kid-view .kid-new .stamp .qty { min-width: 48px; height: 48px; border-radius: 24px; font-size: 24px; }
   #kid-view .kid-new .stamp .tag { font-size: 14px; line-height: 24px; padding: 0 12px; border-radius: 12px; }
@@ -386,6 +393,9 @@
   #kid-view .ghost-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
   #kid-view .ghost-row .slot { width: 64px; border-radius: 18px; }
   #kid-view .kid-empty { text-align: center; color: #b9c6f5; padding: 20px 0; }
+  #kid-view .kid-first-empty { display: flex; flex-direction: column; align-items: center; gap: 28px; text-align: center; }
+  #kid-view .kid-first-slot { width: 160px; height: 160px; border-radius: 50%; border: 5px dashed #9ba4be; background: rgba(155,164,190,.13); }
+  #kid-view .kid-first-text { max-width: 12em; font-size: clamp(30px, 8vw, 42px); line-height: 1.35; font-weight: 800; color: #ffe27a; }
   /* 後端連不上（小孩視圖）：大圖大字「請大人開」，是小孩卡死路徑的最後安全網 */
   #kid-view .kid-off { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
   #kid-view .kid-off .lock { font-size: 96px; line-height: 1; filter: drop-shadow(0 0 24px rgba(255,215,106,.5)); }
@@ -615,6 +625,8 @@
     .pv-main .pv-magnet circle { fill: var(--card); }
     .pv-main:active:not(:disabled) { outline: 2px solid var(--ink); outline-offset: 2px; }
     .pv-main:disabled { opacity: .5; }
+    #parent-view .pv-first-hint { margin: 0 0 12px; padding: 9px 12px; border-left: 4px solid var(--teal);
+                                  background: var(--accent-soft); color: var(--ink); font-size: 16px; font-weight: 700; }
     .pv-qty { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 13px; color: var(--muted); }
     .pv-qty input { width: 76px; padding: 12px 6px; text-align: center; font-size: 22px; font-variant-numeric: tabular-nums; }
     .pv-cond { margin: 0 0 10px; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.4;
@@ -701,7 +713,7 @@
 
   const PV_CHIPS = 6;                    // 第一層最多放幾顆常用 chip，其餘收進第二層
   // tab: 目前分頁（record 記｜catalog 目錄｜log 明細），預設「記」；editing: 正在改的目錄列 key；open: 折疊區展開狀態（re-render 後保留）
-  const pv = { tab: "record", editing: null, open: {} };
+  const pv = { tab: "record", editing: null, open: {}, firstStickerHint: null };
   const PV_TABS = [["record", "記"], ["catalog", "目錄"], ["log", "明細"]];
   const PV_KID_KEY = "sticker.parent.kid";  // 記住上回選的小孩（reload 後也在）
   try { state.current = localStorage.getItem(PV_KID_KEY) || state.current; } catch (_) {}  // 先於 refresh()；小孩不存在時 refresh 會退回第一位
@@ -786,6 +798,8 @@
 
   // ---- 記貼紙（主操作）----
   function pvRecordCard(kid) {
+    const showFirstHint = pv.firstStickerHint === kid?.name;
+    if (showFirstHint) pv.firstStickerHint = null;
     const target = pvTarget();
     const counts = state.detail?.stickers || {};
     // 常用 = 該小孩累積次數多→少（同次數依目錄順序）
@@ -816,6 +830,7 @@
       h("div", { class: "pv-kids", role: "group", "aria-label": "選小孩" }, state.kids.map(pvKidCard)),
       pvCollect(),
       h("div", { class: "pv-big" }, main, h("label", { class: "pv-qty" }, "數量", qty)),
+      showFirstHint ? h("div", { class: "pv-first-hint", role: "status" }, "帶小孩去翻貼紙簿") : [],
       target?.condition ? h("div", { class: "pv-cond" }, `條件：${target.condition}`) : [],
       ranked.length ? h("div", { class: "pv-chips" }, ranked.slice(0, PV_CHIPS).map(pvChip)) : [],
       pvFold("adhoc", "換別種／即興貼紙",
@@ -1042,18 +1057,18 @@
   // ==================== 小孩頁（星空夜藍 + 大圓章；SPEC §7.3、docs/ref/visual-decision.md） ====================
   // 小孩頁專用的大圖章與進度格（共用 stickerTile / goalBar 保持不動，大人頁仍使用它們）。
   //   已擁有＝彩色圓章（多張時右下角 ×N）；缺的＝灰階剪影 + 大「?」；不放文字標籤，認圖不認字。
-  function kidStamp(s, n, isNew) {
+  function kidStamp(s, n, isNew, pop = false) {
     if (n <= 0) {
       return h("div", { class: "stamp locked", title: "還沒收集" },
         h("span", { class: "pic" }, s.emoji), h("span", { class: "q" }, "?"));
     }
-    // 新的一張：沿用該貼紙的固定微旋轉（kidAngle 值不變），剛貼上去的手感；純靜態、無 keyframes
+    // 新的一張沿用固定微旋轉；pop 只在第一次翻到這張時播放。
     const style = isNew
       ? `--tile:${tileColor(s.id)};--rot:${kidAngle(s.id + ":new").toFixed(2)}deg`
       : `--tile:${tileColor(s.id)}`;
-    return h("div", { class: "stamp" + (s.rarity === "epic" ? " epic" : ""), style, title: s.label },
+    return h("div", { class: "stamp" + (s.rarity === "epic" ? " epic" : "") + (pop ? " pop" : ""), style, title: s.label },
       s.rarity === "epic" ? h("span", { class: "epic-mark" }, "✦") : [],
-      isNew ? h("span", { class: "tag" }, "NEW") : [],
+      isNew ? h("span", { class: "tag" }, "新！") : [],
       h("span", { class: "pic" }, s.emoji),
       n > 1 ? h("span", { class: "qty" }, `×${n}`) : []);
   }
@@ -1146,7 +1161,7 @@
   }
 
   // ---- 畫面切換：封面 → 新的一張（可略）→ 貼紙冊第 1..N 頁；線性序列，idx 指到目前那一屏 ----
-  const kidNav = { kid: null, idx: 0, len: 0, fade: false };
+  const kidNav = { kid: null, idx: 0, len: 0, fade: false, popped: new Set() };
 
   function kidGo(delta) {
     const idx = Math.max(0, Math.min(kidNav.len - 1, kidNav.idx + delta));
@@ -1170,15 +1185,27 @@
     }
     if (kidNav.kid !== k.name) Object.assign(kidNav, { kid: k.name, idx: 0 });  // 換小孩 → 回封面
     const counts = state.detail?.stickers || k.stickers || {};
+    if (!Object.values(counts).some(n => n > 0)) {
+      kidNav.len = 1;
+      kidNav.idx = 0;
+      $("kid-view-content").replaceChildren(h("div", { class: "kid-screen" },
+        h("div", { class: "kid-first-empty" },
+          h("div", { class: "kid-first-slot", "aria-hidden": "true" }),
+          h("div", { class: "kid-first-text" }, "找爸爸媽媽記第一張"))));
+      return;
+    }
     const score = k.score || 0;
 
-    // 新的一張：detail.log[0]（最新一筆）若有 count。目錄已刪的貼紙以 log 內 label 頂替
+    // 只把 24 小時內的最新紀錄當作新貼紙；目錄已刪時以 log 內 label 頂替。
     const last = state.detail?.log?.[0];
-    const newest = last && last.count
+    const age = Date.now() - Date.parse(last?.ts || "");
+    const newest = last && last.count > 0 && age >= 0 && age < 24 * 60 * 60 * 1000
       ? { s: state.stickers.find(x => x.id === last.sticker)
             || { id: last.sticker || "", label: last.label || "貼紙", emoji: "🎟️" },
           n: last.count }
       : null;
+    const popKey = newest ? `${k.name}:${last.ts}:${last.sticker}:${counts[last.sticker]}` : null;
+    const playPop = popKey && kidNav.idx === 1 && !kidNav.popped.has(popKey);
     // 往最近獎品：只對 cost 最小的獎品
     const next = state.rewards.filter(r => r.cost > 0).sort((a, b) => a.cost - b.cost)[0];
 
@@ -1191,7 +1218,7 @@
         h("span", { class: "num" }, String(score)), h("span", { class: "star" }, "⭐"))) }];
     if (newest || next) screens.push({ body: h("div", {},
       newest ? h("div", { class: "kid-new" },
-        kidStamp(newest.s, newest.n, true), h("div", { class: "new-title" }, "新的一張")) : [],
+        kidStamp(newest.s, newest.n, true, playPop), h("div", { class: "new-title" }, "新的一張")) : [],
       next ? kidGoal(next, score) : []) });
     for (const pg of kidPages(state.stickers, counts)) screens.push({ body: pg });
 
@@ -1204,6 +1231,7 @@
 
     $("kid-view-content").replaceChildren(
       h("div", { class: "kid-screen" + (kidNav.fade ? " fade" : "") }, cur.body), nav);
+    if (playPop) kidNav.popped.add(popKey);
     kidNav.fade = false;
   }
 
@@ -1274,8 +1302,12 @@
 
   // ---- 共用動作 ----
   async function recordSticker(payload) {
+    const firstSticker = !state.detail?.log?.length
+      && !Object.values(state.detail?.stickers || {}).some(n => n > 0);
+    const kidName = state.current;
     const r = await api(`/${encodeURIComponent(state.current)}/sticker`, "POST", payload);
     if (r.sticker) state.lastSticker = r.sticker;  // 記住上回用的類型，供大人頁「＋記」1 下
+    if (firstSticker) pv.firstStickerHint = kidName;
     return `已記錄：${r.emoji} ${r.label} ×${r.count}，+${r.points_earned} 分，目前 ${r.total_score} 分`;
   }
 

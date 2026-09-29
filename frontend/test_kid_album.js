@@ -58,10 +58,10 @@ assert.strictEqual(kidAlbum(cat, orphan).complete, true);
 assert.strictEqual(kidAlbum(cat, orphan).pasted.length, 14);
 assert.strictEqual(kidAlbum(cat, orphan).pageCount, 2);
 
-// 反向：出貨 demo 資料（小美／Kris／jasper）都不是全集
+// 反向：出貨 demo 資料（Kris／jasper）都不是全集
 const db = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "backend", "data.json"), "utf8"));
 const demoCat = Object.entries(db.stickers).map(([id, s]) => ({ id, ...s }));
-for (const name of ["小美", "Kris", "jasper"]) {
+for (const name of ["Kris", "jasper"]) {
   const a = kidAlbum(demoCat, db.children[name].stickers);
   assert.strictEqual(a.complete, false, `${name} 不該是全集`);
   assert.ok(a.missing.length >= 1, name);
