@@ -862,6 +862,9 @@
               font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; font-size: 17px; font-weight: 700; }
     #parent-view .pv-tab { border-radius: 12px; }
     #parent-view .pv-tab.active { border-color: var(--teal); background: var(--card); }
+    .pv-who { display: block; width: 100%; margin-bottom: 10px; padding: 8px 12px; text-align: left;
+              font-size: 14px; font-weight: 700; color: var(--teal); background: var(--card);
+              border: 1px solid var(--teal); border-radius: 8px; cursor: pointer; }
     .pv-tab:disabled { opacity: .5; }
 
     /* D-fix 對比：--muted 在紙底僅 ~4.0，未達 4.5；父母頁作用域加深（token 名不變，小孩頁不動） */
@@ -994,9 +997,9 @@
     : `${PV_TIERS[i - 1].max + 1}–${PV_TIERS[i].max} 分`;
 
   const PV_CHIPS = 6;                    // 第一層最多放幾顆常用 chip，其餘收進第二層
-  // tab: 目前分頁（record 記｜catalog 目錄｜log 明細），預設「記」；editing: 正在改的目錄列 key；open: 折疊區展開狀態（re-render 後保留）
+  // tab: 目前分頁（record 記｜gift 換禮物｜catalog 目錄｜log 明細），預設「記」；editing: 正在改的目錄列 key；open: 折疊區展開狀態（re-render 後保留）
   const pv = { tab: "record", editing: null, open: {}, firstStickerHint: null };
-  const PV_TABS = [["record", "記"], ["catalog", "目錄"], ["log", "明細"]];
+  const PV_TABS = [["record", "記"], ["gift", "換禮物"], ["catalog", "目錄"], ["log", "明細"]];
   const PV_KID_KEY = "sticker.parent.kid";  // 記住上回選的小孩（reload 後也在）
   try { state.current = localStorage.getItem(PV_KID_KEY) || state.current; } catch (_) {}  // 先於 refresh()；小孩不存在時 refresh 會退回第一位
 
@@ -1329,11 +1332,15 @@
     if (state.current) try { localStorage.setItem(PV_KID_KEY, state.current); } catch (_) {}
     const card = (...kids) => h("div", { class: "card" }, kids);
     const panels = tab === "record" ? [pvRecordCard(kid)]
+      : tab === "gift" ? [pvRedeemCard(kid)]
       : tab === "catalog" ? [
           ...(kid ? [] : [h("div", { class: "hint" }, "還沒有小孩，請先在下方新增一位。")]),
           card(pvStickerSection()), card(pvRewardSection()), card(pvKidSection())]
-      : [pvRedeemCard(kid), card(pvLogSection(kid))];
-    $("parent-view-content").replaceChildren(pvTabBar(tab, !!kid), ...panels);
+      : [card(pvLogSection(kid))];
+    $("parent-view-content").replaceChildren(...(kid && tab !== "record"
+      ? [h("button", { class: "pv-who", title: "回「記」換小孩", onclick: () => pvTab("record") },
+          `在看：${kid.display || kid.name}（${kid.score} 分） · 點此換小孩`)] : []),
+      pvTabBar(tab, !!kid), ...panels);
   }
 
   // ==================== 小孩頁（星空夜藍 + 大圓章；SPEC §7.3、docs/ref/visual-decision.md） ====================
