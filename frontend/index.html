@@ -775,10 +775,10 @@
     msgTimer = setTimeout(() => { msg.textContent = ""; }, 4000);
   }
 
-  // 動作包裝：執行 → 顯示結果 → 重新載入
+  // 動作包裝：執行 → 顯示結果（訊息條＋原頁頂確認_flash，附看明細） → 重新載入
   async function act(fn) {
-    try { say(await fn()); }
-    catch (e) { say("未完成：" + e.message, true); }
+    try { const t = await fn(); say(t); pv.flash = t; }
+    catch (e) { say("未完成：" + e.message, true); pv.flash = null; }
     // re-render 前把可能還掛在舊 DOM 上的兩步確認歸零，避免 reset 打到已移除的節點
     if (confirmArm) { clearTimeout(confirmArm.timer); confirmArm = null; }
     await refresh();
@@ -865,6 +865,21 @@
     .pv-who { display: block; width: 100%; margin-bottom: 10px; padding: 8px 12px; text-align: left;
               font-size: 14px; font-weight: 700; color: var(--teal); background: var(--card);
               border: 1px solid var(--teal); border-radius: 8px; cursor: pointer; }
+    .pv-pick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .pv-pick-btn { flex: 1 1 120px; padding: 10px 6px; font-size: 14px; font-weight: 700; color: var(--ink);
+              background: var(--card); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+    .pv-pick-btn.sel { border: 2px solid var(--teal); color: var(--teal); }
+    .pv-flash { margin-bottom: 10px; padding: 8px 12px; font-size: 14px; color: var(--ink);
+              background: var(--card); border: 1px solid var(--teal); border-radius: 8px; }
+    .pv-flash-go { margin-left: 8px; padding: 4px 10px; font-size: 13px; font-weight: 700; color: var(--card);
+              background: var(--teal); border: 1px solid var(--ink); border-radius: 4px; cursor: pointer; }
+    .pv-redeems { display: flex; flex-direction: column; gap: 8px; }
+    .pv-redeem { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+              padding: 12px; text-align: left; background: var(--card);
+              border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+    .pv-redeem:disabled { opacity: .65; cursor: not-allowed; }
+    .pv-redeem.confirming { border-color: var(--seal); }
+    .pv-redeem-name { font-weight: 700; font-size: 15px; color: var(--ink); }
     .pv-tab:disabled { opacity: .5; }
 
     /* D-fix 對比：--muted 在紙底僅 ~4.0，未達 4.5；父母頁作用域加深（token 名不變，小孩頁不動） */
@@ -1003,8 +1018,8 @@
   const PV_KID_KEY = "sticker.parent.kid";  // 記住上回選的小孩（reload 後也在）
   try { state.current = localStorage.getItem(PV_KID_KEY) || state.current; } catch (_) {}  // 先於 refresh()；小孩不存在時 refresh 會退回第一位
 
-  const pvPick = name => { state.current = name; refresh(); };
-  const pvTab = tab => { pv.tab = tab; pv.editing = null; render(); };
+  const pvPick = name => { state.current = name; pv.pickOpen = false; pv.flash = null; refresh(); };
+  const pvTab = tab => { pv.tab = tab; pv.editing = null; pv.pickOpen = false; pv.flash = null; render(); };
   // 點擊後先停用按鈕，避免連點重複記錄；act 結束會 re-render 還原
   const pvRun = (btn, fn) => { if (btn) btn.disabled = true; act(fn); };
   const pvCount = input => Math.max(1, parseInt(input.value, 10) || 1);
@@ -1092,7 +1107,7 @@
       .sort((a, b) => (counts[b.s.id] || 0) - (counts[a.s.id] || 0) || a.i - b.i).map(x => x.s);
 
     const qty = h("input", { type: "number", min: "1", value: "1", inputmode: "numeric", "aria-label": "數量" });
-    const subText = () => `${target.label} ×${pvCount(qty)}`;
+    const subText = () => `${byId(state.lastSticker) === target ? "上回：" : ""}${target.label} ×${pvCount(qty)}`;
     const sub = h("span", { class: "pv-main-sub" }, target ? subText() : "請先到「目錄」新增貼紙類型");
     if (target) qty.oninput = () => { sub.textContent = subText(); };
     // D8 磁鐵壓條：左緣嵌 10px --card 實心圓；文字 serif 24px＋副行 17px；按壓用 outline（非陰影）
@@ -1172,20 +1187,21 @@
         h("span", { class: "pv-slip-sub" }, pvShopText(r)))));
   }
 
-  // ---- 兌換（大人操作；小孩頁只讀）----
+  // ---- 兌換（大人操作；小孩頁只讀）：一列即一鈕，名稱−成本·狀態寫死同列，不可點原因印列上 ----
   function pvRedeemCard(kid) {
     const rewards = [...state.rewards].sort((a, b) => a.cost - b.cost);
+    const rowSub = r => pvShopClosed(r) ? `${pvMD(r.next_shop)} 開店`
+      : kid.score < r.cost ? `還差 ${r.cost - kid.score} 分`
+      : !r.shop_weeks ? "隨兌可換" : "本周開店中";
     return h("div", { class: "card" },
       h("h2", {}, "兌換", h("span", { class: "meta" }, `${kid.display || kid.name} 目前 ${kid.score} 分`)),
-      pvShopCards(),
       rewards.length
-        ? h("div", { class: "quick" }, rewards.map(r =>
-            h("button", {
+        ? h("div", { class: "pv-redeems" }, rewards.map(r =>
+            h("button", { class: "pv-redeem",
               disabled: pvShopClosed(r) || kid.score < r.cost,
-              title: pvShopClosed(r) ? `未到開店日（${pvMD(r.next_shop)} 開店）`
-                : kid.score < r.cost ? `分數不足（還差 ${r.cost - kid.score} 分）` : null,
-              onclick: e => { armConfirm(e.currentTarget, () => redeem(r)); },
-            }, r.label, h("span", { class: "meta" }, pvShopClosed(r) ? `${pvMD(r.next_shop)} 開店` : `−${r.cost}`))))
+              onclick: e => { armConfirm(e.currentTarget, () => redeem(r)); } },
+              h("span", { class: "pv-redeem-name" }, r.label),
+              h("span", { class: "meta" }, `−${r.cost} · ${rowSub(r)}`))))
         : h("div", { class: "empty" }, "尚無獎品，請到「目錄」新增"));
   }
 
@@ -1338,8 +1354,15 @@
           card(pvStickerSection()), card(pvRewardSection()), card(pvKidSection())]
       : [card(pvLogSection(kid))];
     $("parent-view-content").replaceChildren(...(kid && tab !== "record"
-      ? [h("button", { class: "pv-who", title: "回「記」換小孩", onclick: () => pvTab("record") },
-          `在看：${kid.display || kid.name}（${kid.score} 分） · 點此換小孩`)] : []),
+      ? [h("button", { class: "pv-who", title: "點一下展開換小孩", "aria-expanded": String(!!pv.pickOpen),
+          onclick: () => { pv.pickOpen = !pv.pickOpen; render(); } },
+          `在看：${kid.display || kid.name}（${kid.score} 分） · 點此換小孩`),
+        ...(pv.pickOpen ? [h("div", { class: "pv-pick", role: "group", "aria-label": "換小孩" },
+          state.kids.map(k => h("button", { class: "pv-pick-btn" + (k.name === state.current ? " sel" : ""),
+            onclick: () => { state.current = k.name; pv.pickOpen = false; refresh(); } },
+            `${k.emoji || ""} ${k.display || k.name}（${k.score} 分）`.trim())))] : [])] : []),
+      ...(pv.flash ? [h("div", { class: "pv-flash", role: "status" }, pv.flash,
+        h("button", { class: "pv-flash-go", onclick: () => pvTab("log") }, "看明細"))] : []),
       pvTabBar(tab, !!kid), ...panels);
   }
 
