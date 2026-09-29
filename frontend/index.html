@@ -882,7 +882,8 @@
                    font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; font-weight: 700; font-size: 15px; }
     .pv-kid-score { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
     .pv-magnet circle { fill: var(--line); }
-    .pv-kid.sel .pv-magnet circle { fill: var(--seal); }
+    .pv-kid.sel { border: 2px solid var(--teal); padding: 6px 5px 8px; }
+    .pv-kid.sel .pv-kid-name::after { content: "在記這位"; display: block; font-size: 13px; color: var(--teal); font-weight: 700; }
 
     /* D5-D7 集點打孔列 */
     .pv-collect { margin: 0 0 14px; }
