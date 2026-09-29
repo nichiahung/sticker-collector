@@ -17,3 +17,8 @@ docs/ROADMAP.md
 docs/competitive.md
 docs/ref/
 docs/book-shots/
+
+# 本地 worktree 目錄：不追蹤、不上 Pages
+worktrees-kid/
+worktrees-parent/
+wt-*/
