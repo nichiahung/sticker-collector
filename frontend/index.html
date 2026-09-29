@@ -433,7 +433,7 @@
 <a id="parent-kid-link" href="?view=kid" style="display:none;font-size:13px;color:var(--muted);text-decoration:none">開啟小孩視圖 →</a>
 
 <!-- 小孩視圖的出口（僅在 kid 視圖顯示，導向預設大人入口）-->
-<a id="kid-exit" href="/" style="display:none" title="請大人開">🔒</a>
+<a id="kid-exit" href="../" style="display:none" title="請大人開">🔒</a>
 
 <!-- 大人頁（大人頁 agent 填） -->
 <section id="parent-view">
@@ -473,17 +473,298 @@
     return e;
   }
 
-  async function api(path, method = "GET", body) {
+  async function liveApi(path, method, body) {
     const opts = { method };
     if (body !== undefined) {
       opts.headers = { "Content-Type": "application/json" };
       opts.body = JSON.stringify(body);
     }
-    const res = await fetch(API + path, opts);
+    let res;
+    try { res = await fetch(API + path, opts); }
+    catch (_) { throw { demoFallback: true }; }  // 連不上任何伺服器（file://、純靜態託管）→ 試用版
     const data = await res.json().catch(() => ({}));
+    // 有後端時錯誤一律帶 {error}；純靜態託管回的是 HTML（404 頁）→ 無 error → 試用版
+    if (!res.ok && !data.error) throw { demoFallback: true };
     if (!res.ok) throw new Error(data.error || res.status);
     return data;
   }
+
+  async function api(path, method = "GET", body) {
+    // 未指定 ?api 且同源沒有後端 → 本機試用版（localStorage；有後端時行為完全不變）
+    if (!API) {
+      try { return await liveApi(path, method, body); }
+      catch (e) {
+        if (e && e.demoFallback) {
+          try { return demoApi(path, method, body); }
+          catch (d) {
+            if (d && d.demoBody) throw new Error(d.demoBody.error || d.demoStatus);
+            throw d;
+          }
+        }
+        throw e;
+      }
+    }
+    return liveApi(path, method, body);
+  }
+
+  // DEMO_BEGIN — 純靜態託管（GitHub Pages）用的本機試用版：localStorage 持久，
+  // 語意鏡像 backend/sticker_store.py＋sticker_api.py。有後端時不會啟用。
+  const DEMO_KEY = "sticker.demo.db.v1";
+  const DEMO_SEED = {"children": {"Kris": {"display": "Kris", "emoji": "🦊", "score": 25, "stickers": {"star": 5, "rainbow": 1, "gold": 1, "cat": 1, "apple": 1, "cloud": 1, "cookie": 1, "frog": 1, "unicorn": 1, "moon": 1}, "log": [{"ts": "2026-09-25T16:24:39+08:00", "kind": "star", "count": 1, "earned": 1}, {"ts": "2026-09-25T16:24:40+08:00", "kind": "rainbow", "count": 1, "earned": 2}, {"ts": "2026-09-25T16:24:41+08:00", "kind": "gold", "count": 1, "earned": 5}, {"ts": "2026-09-26T09:00:00+08:00", "sticker": "star", "label": "星星", "count": 4, "points": 4}, {"ts": "2026-09-26T09:01:00+08:00", "sticker": "cat", "label": "小貓", "count": 1, "points": 1}, {"ts": "2026-09-26T09:02:00+08:00", "sticker": "apple", "label": "蘋果", "count": 1, "points": 1}, {"ts": "2026-09-26T09:03:00+08:00", "sticker": "cloud", "label": "雲朵", "count": 1, "points": 1}, {"ts": "2026-09-26T09:04:00+08:00", "sticker": "cookie", "label": "餅乾", "count": 1, "points": 2}, {"ts": "2026-09-26T09:05:00+08:00", "sticker": "frog", "label": "青蛙", "count": 1, "points": 2}, {"ts": "2026-09-26T09:06:00+08:00", "sticker": "unicorn", "label": "獨角獸", "count": 1, "points": 3}, {"ts": "2026-09-26T09:07:00+08:00", "sticker": "moon", "label": "月亮", "count": 1, "points": 3}], "rewards": []}, "jasper": {"display": "jasper", "emoji": "🐸", "score": 17, "stickers": {"star": 1, "rainbow": 1, "cat": 1, "apple": 1, "cloud": 1, "cookie": 1, "frog": 1, "moon": 1, "gem": 1}, "log": [{"ts": "2026-09-26T09:00:00+08:00", "sticker": "star", "label": "星星", "count": 1, "points": 1}, {"ts": "2026-09-26T09:01:00+08:00", "sticker": "rainbow", "label": "彩虹", "count": 1, "points": 2}, {"ts": "2026-09-26T09:02:00+08:00", "sticker": "cat", "label": "小貓", "count": 1, "points": 1}, {"ts": "2026-09-26T09:03:00+08:00", "sticker": "apple", "label": "蘋果", "count": 1, "points": 1}, {"ts": "2026-09-26T09:04:00+08:00", "sticker": "cloud", "label": "雲朵", "count": 1, "points": 1}, {"ts": "2026-09-26T09:05:00+08:00", "sticker": "cookie", "label": "餅乾", "count": 1, "points": 2}, {"ts": "2026-09-26T09:06:00+08:00", "sticker": "frog", "label": "青蛙", "count": 1, "points": 2}, {"ts": "2026-09-26T09:07:00+08:00", "sticker": "moon", "label": "月亮", "count": 1, "points": 3}, {"ts": "2026-09-26T09:08:00+08:00", "sticker": "gem", "label": "寶石", "count": 1, "points": 4}], "rewards": []}}, "stickers": {"star": {"label": "星星", "emoji": "⭐", "points": 1, "rarity": "common", "condition": "準備好明天用品"}, "rainbow": {"label": "彩虹", "emoji": "🌈", "points": 2, "rarity": "common", "condition": "睡前流程自己完成"}, "gold": {"label": "金色", "emoji": "🏆", "points": 5, "rarity": "epic", "condition": "一週每天準時"}, "cat": {"label": "小貓", "emoji": "🐱", "points": 1, "rarity": "common", "condition": "主動收拾玩具"}, "apple": {"label": "蘋果", "emoji": "🍎", "points": 1, "rarity": "common", "condition": "好好吃完一餐"}, "cloud": {"label": "雲朵", "emoji": "☁️", "points": 1, "rarity": "common", "condition": "準時上床"}, "cookie": {"label": "餅乾", "emoji": "🍪", "points": 2, "rarity": "common", "condition": "自己穿好衣服鞋子"}, "frog": {"label": "青蛙", "emoji": "🐸", "points": 2, "rarity": "common", "condition": "幫忙做一件家事"}, "unicorn": {"label": "獨角獸", "emoji": "🦄", "points": 3, "rarity": "rare", "condition": "作業全對"}, "moon": {"label": "月亮", "emoji": "🌙", "points": 3, "rarity": "rare", "condition": "主動整理書包和房間"}, "gem": {"label": "寶石", "emoji": "💎", "points": 4, "rarity": "rare", "condition": "不用提醒就完成功課"}, "dragon": {"label": "神龍", "emoji": "🐉", "points": 5, "rarity": "epic", "condition": "一週作業全對"}}, "rewards": {"small": {"label": "Roblox 遊戲時間 30 分鐘", "cost": 10}, "big": {"label": "Roblox 假日遊戲時間 2 小時", "cost": 30, "shop_weeks": 2}}};
+  function demoErr(status, body) { throw { demoStatus: status, demoBody: body }; }
+  function demoNowIso() {
+    const d = new Date(), p = n => String(n).padStart(2, "0"), off = -d.getTimezoneOffset();
+    const s = off >= 0 ? "+" : "-", a = Math.abs(off);
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}${s}${p(Math.floor(a / 60))}:${p(a % 60)}`;
+  }
+  function demoNormSeed(db) {  // 舊格式 kind/earned 一次轉成新格式（後端讀時容忍，這裡直接正規化）
+    for (const rec of Object.values(db.children || {})) {
+      for (const e of (rec.log || [])) {
+        if (e.sticker == null && e.kind != null) e.sticker = e.kind;
+        if (e.points == null && e.earned != null) e.points = e.earned;
+        delete e.kind; delete e.earned;
+      }
+      for (const e of (rec.rewards || [])) {
+        if (e.reward == null && e.kind != null) e.reward = e.kind;
+        delete e.kind;
+      }
+    }
+    return db;
+  }
+  function demoLoad() {
+    try {
+      const raw = localStorage.getItem(DEMO_KEY);
+      if (raw) {
+        const db = JSON.parse(raw);
+        if (db && db.stickers && db.rewards && db.children) return demoNormSeed(db);
+      }
+    } catch (_) {}
+    return demoNormSeed(JSON.parse(JSON.stringify(DEMO_SEED)));
+  }
+  function demoSave(db) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(db)); } catch (_) {} }
+  const demoSlug = t => [...String(t).toLowerCase()].filter(ch => /[\p{L}\p{N}]/u.test(ch)).join("");
+  function demoInt(v, field, min) {
+    if (typeof v !== "boolean" && Number.isInteger(v) && v >= min) return v;
+    demoErr(400, { error: `${field} must be int >= ${min}` });
+  }
+  function demoLabel(v) {
+    if (typeof v !== "string" || !v.trim()) demoErr(400, { error: "label required" });
+    const s = v.trim();
+    if (s.length > 50) demoErr(400, { error: "label too long (max 50)" });
+    return s;
+  }
+  const demoEmoji = (v, dflt) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 16) : dflt);
+  function demoItemId(id, label) {
+    const sid = demoSlug(id || label || "");
+    if (!sid) demoErr(400, { error: "id must contain letters or digits" });
+    return sid;
+  }
+  const DEMO_RAR = ["common", "rare", "epic"];
+  const demoItems = cat => Object.entries(cat).map(([id, v]) => ({ id, ...v }));
+  const demoLabelOf = (cat, id, e) => e.label || (cat[id] || {}).label || id;
+  function demoReadLog(e, stickers) {
+    const sid = e.sticker || e.kind;
+    return { ts: e.ts, sticker: sid, label: demoLabelOf(stickers, sid, e),
+             count: e.count == null ? 1 : e.count, points: e.points != null ? e.points : (e.earned || 0) };
+  }
+  function demoReadRedeem(e, rewards) {
+    const rid = e.reward || e.kind;
+    return { ts: e.ts, reward: rid, label: demoLabelOf(rewards, rid, e), cost: e.cost || 0 };
+  }
+  const demoRecent = (list, read, cat) => list.slice(-20).reverse().map(e => read(e, cat));
+  function demoView(name, rec, db, detail) {
+    const counts = {};
+    for (const sid of Object.keys(db.stickers)) counts[sid] = 0;
+    Object.assign(counts, rec.stickers || {});
+    const score = rec.score || 0;
+    const view = { name, display: rec.display || name, emoji: rec.emoji || "🙂", score,
+      stickers: counts,
+      rewards_affordable: Object.fromEntries(Object.entries(db.rewards)
+        .filter(([, r]) => (r.cost || 0) > 0).map(([rid, r]) => [rid, Math.floor(score / r.cost)])) };
+    if (detail) {
+      view.log = demoRecent(rec.log || [], demoReadLog, db.stickers);
+      view.reward_log = demoRecent(rec.rewards || [], demoReadRedeem, db.rewards);
+    }
+    return view;
+  }
+  function demoShop(reward, now) {  // 鏡像 _shop_status：開店日＝首次兌獎日＋n×週期，窗內 4 天
+    const weeks = reward.shop_weeks;
+    if (!weeks) return null;
+    const m = /^(\d+)-(\d+)-(\d+)/.exec(reward.last_shop_ts || "");
+    if (!m) return { open: false, next: null };
+    const anchor = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    const t = new Date(now.getTime());
+    const today = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+    const period = weeks * 7, elapsed = Math.round((today - anchor) / 864e5);
+    if (elapsed < 0) return { open: false, next: m[1] + "-" + m[2] + "-" + m[3] };
+    const n = Math.floor(elapsed / period), f = d => new Date(d).toISOString().slice(0, 10);
+    return { open: elapsed - n * period <= 3, next: f(anchor + (n + 1) * period * 864e5) };
+  }
+  function demoRewards(db) {
+    const now = new Date();
+    return demoItems(db.rewards).map(r => {
+      const st = demoShop(r, now);
+      return st ? { ...r, shop_open: st.open, next_shop: st.next } : { ...r };
+    });
+  }
+  const DEMO_RESERVED = new Set(["children", "stickers", "rewards", "kids"]);
+  const DEMO_NAMERE = /^[A-Za-z0-9_一-鿿-]{1,50}$/;
+  function demoApi(path, method = "GET", body) {
+    if (!window.__demoAnnounced) {  // 只提示一次：試用版資料不出這台瀏覽器
+      window.__demoAnnounced = true;
+      try {
+        const sub = document.querySelector("main .sub");
+        if (sub) sub.textContent = "試用版：資料只存在這台瀏覽器，換台機器看不到。";
+      } catch (_) {}
+    }
+    const db = demoLoad();
+    const save = () => demoSave(db);
+    const seg = path.split("/").filter(s => s !== "").map(decodeURIComponent);
+    // ---- GET ----
+    if (method === "GET" && seg.length === 0) demoErr(404, { error: "not found" });
+    if (method === "GET" && seg.length === 1 && seg[0] === "children")
+      return { children: Object.entries(db.children).map(([n, r]) => demoView(n, r, db)) };
+    if (method === "GET" && seg.length === 1 && seg[0] === "stickers") return { stickers: demoItems(db.stickers) };
+    if (method === "GET" && seg.length === 1 && seg[0] === "rewards") return { rewards: demoRewards(db) };
+    if (method === "GET" && seg.length === 2 && seg[1] === "rewards") {
+      const rec = db.children[seg[0]];
+      if (!rec) demoErr(404, { error: `child '${seg[0]}' not found` });
+      return { name: seg[0], rewards: (rec.rewards || []).map(e => ({ name: seg[0], ...demoReadRedeem(e, db.rewards) })) };
+    }
+    if (method === "GET" && seg.length === 1) {
+      const rec = db.children[seg[0]];
+      if (!rec) demoErr(404, { error: `child '${seg[0]}' not found` });
+      return demoView(seg[0], rec, db, true);
+    }
+    // ---- POST /kids ----
+    if (method === "POST" && seg.length === 1 && seg[0] === "kids") {
+      const name = (body || {}).name;
+      if (typeof name !== "string" || !DEMO_NAMERE.test(name) || DEMO_RESERVED.has(name))
+        demoErr(400, { error: "name required (1-50 chars, not a reserved word)" });
+      if (!db.children[name]) {
+        db.children[name] = { display: (typeof body.display === "string" && body.display.trim() ? body.display.trim() : null),
+          emoji: demoEmoji(body.emoji, "🙂"), score: 0, stickers: {}, log: [], rewards: [] };
+        save();
+      }
+      return demoView(name, db.children[name], db);
+    }
+    // ---- POST 目錄 ----
+    if (method === "POST" && seg.length === 1 && (seg[0] === "stickers" || seg[0] === "rewards")) {
+      const kind = seg[0], b = body || {};
+      const label = demoLabel(b.label);
+      if (kind === "stickers") {
+        const points = demoInt(b.points, "points", 0);
+        if (b.rarity != null && !DEMO_RAR.includes(b.rarity))
+          demoErr(400, { error: `rarity must be one of ${DEMO_RAR.join(", ")}` });
+        const sid = demoItemId(b.id, label);
+        if (!db.stickers[sid]) {
+          db.stickers[sid] = { label, emoji: demoEmoji(b.emoji, "🎟️"), points };
+          if (b.rarity) db.stickers[sid].rarity = b.rarity;
+          if (typeof b.condition === "string" && b.condition.trim()) db.stickers[sid].condition = b.condition.trim();
+          save();
+        }
+        return { id: sid, ...db.stickers[sid] };
+      }
+      const cost = demoInt(b.cost, "cost", 1);
+      const rid = demoItemId(b.id, label);
+      let weeks = b.shop_weeks;
+      if (weeks === undefined || weeks === null) weeks = null;
+      else if (weeks !== 0) weeks = demoInt(weeks, "shop_weeks", 1);
+      else weeks = null;
+      if (!db.rewards[rid]) {
+        db.rewards[rid] = { label, cost };
+        if (weeks) db.rewards[rid].shop_weeks = weeks;
+        save();
+      }
+      return { id: rid, ...db.rewards[rid] };
+    }
+    // ---- POST 記貼紙 ----
+    if (method === "POST" && seg.length === 2 && seg[1] === "sticker") {
+      const name = seg[0], b = body || {};
+      if (!DEMO_NAMERE.test(name)) demoErr(400, { error: "invalid name" });
+      const count = demoInt(b.count == null ? 1 : b.count, "count", 1);
+      let sid = b.sticker;
+      if (sid == null) {
+        const label = demoLabel(b.label);
+        const hit = Object.entries(db.stickers)
+          .find(([, s]) => (s.label || "").trim().toLowerCase() === label.toLowerCase());
+        if (hit) sid = hit[0];
+        else {
+          if (b.points == null) demoErr(400, { error: "points required for a sticker not in the catalog" });
+          const points = demoInt(b.points, "points", 0);
+          const base = demoSlug(label) || "sticker";
+          sid = base; let n = 2;
+          while (db.stickers[sid]) { sid = base + n; n++; }
+          db.stickers[sid] = { label, emoji: demoEmoji(b.sticker_emoji, "🎟️"), points };
+        }
+      } else if (!db.stickers[sid]) demoErr(404, { error: `找不到貼紙: ${sid}` });
+      const st = db.stickers[sid], earned = st.points * count;
+      if (!db.children[name])
+        db.children[name] = { display: b.display || null, emoji: demoEmoji(b.emoji, "🙂"), score: 0, stickers: {}, log: [], rewards: [] };
+      const rec = db.children[name];
+      rec.stickers[sid] = (rec.stickers[sid] || 0) + count;
+      rec.score = (rec.score || 0) + earned;
+      const entry = { ts: demoNowIso(), sticker: sid, label: st.label, count, points: earned };
+      rec.log.push(entry); save();
+      return { name, sticker: sid, label: st.label, emoji: st.emoji, count, points_earned: earned, total_score: rec.score };
+    }
+    // ---- POST 兌換 ----
+    if (method === "POST" && seg.length === 3 && seg[1] === "reward") {
+      const name = seg[0], rid = seg[2];
+      if (!DEMO_NAMERE.test(name)) demoErr(400, { error: "invalid name" });
+      const rec = db.children[name];
+      if (!rec) demoErr(404, { error: `找不到小朋友: ${name}` });
+      const rw = db.rewards[rid];
+      if (!rw) demoErr(404, { error: `找不到獎品: ${rid}` });
+      const st = demoShop(rw, new Date());
+      if (st && st.next !== null && !st.open) demoErr(400, { error: "shop_closed", next_shop: st.next });
+      if ((rec.score || 0) < rw.cost)
+        demoErr(400, { error: "insufficient score", current_score: rec.score || 0, cost: rw.cost });
+      rec.score -= rw.cost;
+      const ts = demoNowIso();
+      rec.rewards.push({ ts, reward: rid, label: rw.label, cost: rw.cost });
+      if (st && st.next === null) rw.last_shop_ts = ts;  // 首兌：定下家庭開店日
+      save();
+      return { name, reward: rid, label: rw.label, points_deducted: rw.cost, remaining_score: rec.score };
+    }
+    // ---- PUT ----
+    if (method === "PUT" && seg.length === 2 && (seg[0] === "stickers" || seg[0] === "rewards")) {
+      const kind = seg[0], id = seg[1], b = body || {};
+      const cat = db[kind];
+      if (!cat[id]) demoErr(404, { error: kind === "stickers" ? `找不到貼紙: ${id}` : `找不到獎品: ${id}` });
+      if (kind === "stickers") {
+        if (b.label !== undefined && b.label !== null) cat[id].label = demoLabel(b.label);
+        if (b.emoji !== undefined && b.emoji !== null) cat[id].emoji = demoEmoji(b.emoji, "🎟️");
+        if (b.points !== undefined && b.points !== null) cat[id].points = demoInt(b.points, "points", 0);
+        if (b.rarity !== undefined && b.rarity !== null) {
+          if (!DEMO_RAR.includes(b.rarity)) demoErr(400, { error: `rarity must be one of ${DEMO_RAR.join(", ")}` });
+          cat[id].rarity = b.rarity;
+        }
+        if (b.condition !== undefined && b.condition !== null) {
+          const c = String(b.condition).trim();
+          if (c) cat[id].condition = c; else delete cat[id].condition;
+        }
+      } else {
+        if (b.label !== undefined && b.label !== null) cat[id].label = demoLabel(b.label);
+        if (b.cost !== undefined && b.cost !== null) cat[id].cost = demoInt(b.cost, "cost", 1);
+        if (b.shop_weeks !== undefined && b.shop_weeks !== null) {
+          if (b.shop_weeks === 0) delete cat[id].shop_weeks;
+          else cat[id].shop_weeks = demoInt(b.shop_weeks, "shop_weeks", 1);
+        }
+      }
+      save();
+      return { id, ...cat[id] };
+    }
+    // ---- DELETE ----
+    if (method === "DELETE" && seg.length === 2 && (seg[0] === "stickers" || seg[0] === "rewards")) {
+      const cat = db[seg[0]];
+      if (!cat[seg[1]]) demoErr(404, { error: seg[0] === "stickers" ? `找不到貼紙: ${seg[1]}` : `找不到獎品: ${seg[1]}` });
+      delete cat[seg[1]]; save();
+      return { deleted: seg[1] };
+    }
+    demoErr(404, { error: "not found" });
+  }
+  // DEMO_END
 
   let msgTimer = null;
   function say(text, isError = false) {

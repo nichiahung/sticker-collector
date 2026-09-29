@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貼紙紀錄 📔</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Inter", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+         background: #f4f2ed; color: #34322e; min-height: 100vh;
+         display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  main { max-width: 420px; width: 100%; text-align: center; }
+  h1 { font-size: 30px; font-weight: 600; margin-bottom: 6px; }
+  .sub { color: #7c776c; font-size: 15px; margin-bottom: 24px; }
+  a.door { display: block; background: #fff; border: 1px solid #e2ddd1; border-radius: 16px;
+           padding: 20px; margin-bottom: 12px; text-decoration: none; color: #34322e; }
+  a.door b { display: block; font-size: 20px; margin-bottom: 4px; }
+  a.door span { font-size: 14px; color: #7c776c; }
+  a.door:active { outline: 2px solid #4f7a73; }
+  .note { margin-top: 16px; font-size: 13px; color: #7c776c; }
+</style>
+</head>
+<body>
+<main>
+  <h1>貼紙紀錄 📔</h1>
+  <p class="sub">記下收到的貼紙，累積分數後兌換獎品。</p>
+  <a class="door" href="./frontend/"><b>👩‍👧 大人記貼紙</b><span>選小孩、按一下就記好</span></a>
+  <a class="door" href="./frontend/?view=kid"><b>📖 小孩看貼紙本</b><span>翻自己的收集冊、看離獎品多遠</span></a>
+  <p class="note">試用版：資料只存在這台瀏覽器，換台機器看不到。</p>
+</main>
+</body>
+</html>
