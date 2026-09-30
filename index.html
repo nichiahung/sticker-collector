@@ -489,12 +489,14 @@
     return data;
   }
 
+  let DEMO_MODE = false;  // 試用版旗標：開了就全頁頂掛試用條
   async function api(path, method = "GET", body) {
     // 未指定 ?api 且同源沒有後端 → 本機試用版（localStorage；有後端時行為完全不變）
     if (!API) {
       try { return await liveApi(path, method, body); }
       catch (e) {
         if (e && e.demoFallback) {
+          DEMO_MODE = true;
           try { return demoApi(path, method, body); }
           catch (d) {
             if (d && d.demoBody) throw new Error(d.demoBody.error || d.demoStatus);
@@ -837,6 +839,10 @@
     if (state.view === "parent") renderParentView();
     else renderKidView();
   }
+  // 試用版條：純靜態託管（Pages）自動掛，告訴外人資料只存本機
+  const demoBanner = () => !DEMO_MODE ? []
+    : [h("div", { class: "demo-banner", role: "note" },
+        "試用版 · 資料只存在這台裝置（Kris / Jasper 為示範資料），換裝置不會同步")];
 
   // ==================== 大人頁（pain：操作摩擦 ≤ 2 下記一貼） ====================
   // SPEC §7.2。由「大人頁」agent 填入：
@@ -880,6 +886,8 @@
     .pv-redeem:disabled { opacity: .65; cursor: not-allowed; }
     .pv-redeem.confirming { border-color: var(--seal); }
     .pv-redeem-name { font-weight: 700; font-size: 15px; color: var(--ink); }
+    .demo-banner { margin-bottom: 10px; padding: 8px 12px; font-size: 13px; color: var(--muted);
+              background: var(--card); border: 1px dashed var(--line); border-radius: 8px; }
     .pv-tab:disabled { opacity: .5; }
 
     /* D-fix 對比：--muted 在紙底僅 ~4.0，未達 4.5；父母頁作用域加深（token 名不變，小孩頁不動） */
@@ -1353,7 +1361,7 @@
           ...(kid ? [] : [h("div", { class: "hint" }, "還沒有小孩，請先在下方新增一位。")]),
           card(pvStickerSection()), card(pvRewardSection()), card(pvKidSection())]
       : [card(pvLogSection(kid))];
-    $("parent-view-content").replaceChildren(...(kid && tab !== "record"
+    $("parent-view-content").replaceChildren(...demoBanner(), ...(kid && tab !== "record"
       ? [h("button", { class: "pv-who", title: "點一下展開換小孩", "aria-expanded": String(!!pv.pickOpen),
           onclick: () => { pv.pickOpen = !pv.pickOpen; render(); } },
           `在看：${kid.display || kid.name}（${kid.score} 分） · 點此換小孩`),
